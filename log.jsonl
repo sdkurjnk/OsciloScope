@@ -1,0 +1,5 @@
+{"name": "count", "data": 0, "event": "init"}
+{"name": "count", "data": 1, "event": "updated"}
+{"name": "count", "data": 2, "event": "updated"}
+{"name": "total", "data": 0.0, "event": "init"}
+{"name": "total", "data": 3.14, "event": "updated"}
