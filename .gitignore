@@ -1,10 +1,9 @@
-<<<<<<< HEAD
 .DS_Store
 .vscode/
-=======
 out
 dist
 node_modules
 .vscode-test/
 *.vsix
->>>>>>> 022e6ab (feat: VSC Extension 백엔드 초기 구현)
+.DS_Store
+.vscode/
