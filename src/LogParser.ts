@@ -1,9 +1,11 @@
 import * as fs from 'fs';
 
 interface RawLog {
-    name  : string;
-    data  : any;
-    event : string;
+    name   : string;
+    data   : any;
+    event  : string;
+    domain : string;  
+    line   : number;  
 }
 
 export class LogParser {
@@ -33,7 +35,7 @@ export class LogParser {
             varMap[log.name] = {
                 varName: log.name,
                 type: typeof log.data,
-                scope: 'Global',
+                scope: log.domain === 'LOCAL' ? 'Local' : 'Global',
                 history: []
             };
             stepCounter[log.name] = 0;
@@ -45,7 +47,7 @@ export class LogParser {
 
         varMap[log.name].history.push({
             step  : stepCounter[log.name],
-            line  : null,
+            line: log.line,
             value : value
         });
     }
