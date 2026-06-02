@@ -8,26 +8,45 @@ export class VMLWebviewPanel {
     private static panel: vscode.WebviewPanel;
 
     public static createOrShow(extensionUri: vscode.Uri): void {
-        if (VMLWebviewPanel.panel) {
-            VMLWebviewPanel.panel.reveal(vscode.ViewColumn.One);
-            return;
+    if (VMLWebviewPanel.panel) {
+        VMLWebviewPanel.panel.reveal(vscode.ViewColumn.One);
+        return;
+    }
+
+    VMLWebviewPanel.panel = vscode.window.createWebviewPanel(
+        'vmlVisualizer',
+        'VML Visualizer',
+        vscode.ViewColumn.One,
+        {
+            enableScripts: true,
+            localResourceRoots: [
+                vscode.Uri.joinPath(extensionUri, 'vml_visualizer')
+            ]
         }
+    );
 
-        VMLWebviewPanel.panel = vscode.window.createWebviewPanel(
-            'vmlVisualizer',
-            'VML Visualizer',
-            vscode.ViewColumn.One,
-            { enableScripts: true }
-        );
+    // ⭐ webview 변수 정의
+    const webview = VMLWebviewPanel.panel.webview;
 
-        const htmlPath = path.join(extensionUri.fsPath, 'webview', 'index.html');
-        VMLWebviewPanel.panel.webview.html = fs.readFileSync(htmlPath, 'utf-8');
+    // ⭐ HTML 파일을 변수로 읽기 (let html으로 정의!)
+    const htmlPath = path.join(extensionUri.fsPath, 'vml_visualizer', 'index.html');
+    let html = fs.readFileSync(htmlPath, 'utf-8');
 
-        VMLWebviewPanel.panel.onDidDispose(() => {
-            VMLWebviewPanel.panel = undefined as any;
-        });
+    // ⭐ 상대경로를 Webview URI로 변환
+    html = html.replace(/(href|src)="(css|js)\/([^"]+)"/g, (match, attr, folder, file) => {
+        const resourcePath = vscode.Uri.joinPath(extensionUri, 'vml_visualizer', folder, file);
+        const webviewUri = webview.asWebviewUri(resourcePath);
+        return `${attr}="${webviewUri}"`;
+    });
 
-        VMLWebviewPanel.receiveDataFromWebview();
+    // ⭐ 변환된 HTML을 webview에 할당
+    webview.html = html;
+
+    VMLWebviewPanel.panel.onDidDispose(() => {
+        VMLWebviewPanel.panel = undefined as any;
+    });
+
+    VMLWebviewPanel.receiveDataFromWebview();
     }
 
     public static sendDataToWebview(message: VmlMessage): void {
