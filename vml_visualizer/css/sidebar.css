@@ -1,0 +1,61 @@
+/* ── 사이드바 ── */
+.sb {
+  width: 200px;
+  background: #252526;
+  border-right: 1px solid #3c3c3c;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.sb-hdr {
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #858585;
+  border-bottom: 1px solid #3c3c3c;
+  letter-spacing: .08em;
+}
+.sb-list { overflow-y: auto; flex: 1; }
+.sb-list::-webkit-scrollbar { width: 5px; }
+.sb-list::-webkit-scrollbar-thumb { background: #3c3c3c; border-radius: 3px; }
+
+/* Scope group */
+.sg { border-bottom: 1px solid #3c3c3c; }
+.sg-lbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #cccccc;
+  cursor: pointer;
+  user-select: none;
+}
+.sg-lbl:hover { background: #2a2d2e; }
+.chev { font-size: 10px; color: #858585; transition: transform .15s; }
+.sg.collapsed .chev { transform: rotate(-90deg); }
+.sg.collapsed .vl { display: none; }
+
+/* Variable items */
+.vl { padding: 4px 0; }
+.vi {
+  padding: 5px 12px 5px 26px;
+  font-size: 12px;
+  color: #9d9d9d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vi:hover { background: #2a2d2e; color: #cccccc; }
+.vi.active { background: #04395e; color: #4fc1ff; }
+.vt {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #3c3c3c;
+  color: #858585;
+  flex-shrink: 0;
+}
+.vi.active .vt { background: #1b3a4b; color: #4fc1ff; }
+.vn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
