@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VML Visualizer</title>
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/timeline.css">
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">VML<span>·</span>Visualizer</div>
+  <div class="badge waiting" id="badge">대기 중</div>
+</div>
+
+<div class="main">
+  <div class="sb">
+    <div class="sb-hdr">VARIABLES</div>
+    <div class="sb-list" id="sbList"></div>
+  </div>
+  <div class="content">
+    <div class="tl-hdr" id="tlHdr" style="display:none">
+      <span class="tl-name" id="tlName">—</span>
+      <span class="tl-scope" id="tlScope">—</span>
+      <span class="tl-cnt" id="tlCnt"></span>
+    </div>
+    <div class="tl-body" id="tlBody">
+      <div class="empty">
+        <div style="font-size:24px">⬡</div>
+        <p>사이드바에서 변수를 선택하세요</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/constants.js"></script>
+<script src="js/DataManager.js"></script>
+<script src="js/SidebarManager.js"></script>
+<script src="js/TimelineViewer.js"></script>
+<script src="js/VisualizerApp.js"></script>
+<script src="js/mockData.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
