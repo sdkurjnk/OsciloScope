@@ -1,0 +1,58 @@
+/* ── 전역 리셋 & 레이아웃 ── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Consolas', 'Courier New', monospace;
+  background: #1e1e1e;
+  color: #cccccc;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Header */
+.hdr {
+  height: 40px;
+  background: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.logo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4fc1ff;
+  letter-spacing: .06em;
+}
+.logo span { color: #c586c0; }
+
+.badge {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #2d2d2d;
+}
+.badge.waiting { border: 1px solid #3c3c3c; color: #858585; }
+.badge.loading  { border: 1px solid #dcdcaa; color: #dcdcaa; }
+.badge.connected { border: 1px solid #4ec9b0; color: #4ec9b0; }
+
+/* Main split */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #1e1e1e;
+}

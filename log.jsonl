@@ -1,0 +1,7 @@
+{"name": "count", "data": 0, "event": "init", "domain": "GLOBAL", "line": 5}
+{"name": "count", "data": 1, "event": "updated", "domain": "GLOBAL", "line": 8}
+{"name": "count", "data": 2, "event": "updated", "domain": "GLOBAL", "line": 8}
+{"name": "x", "data": 10, "event": "init", "domain": "LOCAL", "line": 15}
+{"name": "x", "data": 20, "event": "updated", "domain": "LOCAL", "line": 18}
+{"name": "total", "data": 0.0, "event": "init", "domain": "GLOBAL", "line": 6}
+{"name": "total", "data": 3.14, "event": "updated", "domain": "GLOBAL", "line": 9}
