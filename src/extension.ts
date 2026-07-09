@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { LogParser } from './LogParser';
-import { VMLWebviewPanel } from './VMLWebviewPanel';
-import { CommandTypes } from './VmlMessage';
+import { OsciloScopeWebviewPanel } from './OsciloScopeWebviewPanel';
+import { CommandTypes } from './OsciloScopeMessage';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('[ExtensionManager] OsciloScope Extension 시작!');
@@ -20,10 +20,10 @@ export function activate(context: vscode.ExtensionContext) {
         const data = parser.transformData(rawLogs);
 
         // ④ Webview 창 열기
-        VMLWebviewPanel.createOrShow(context.extensionUri);
+        OsciloScopeWebviewPanel.createOrShow(context.extensionUri);
 
         // ⑤ 프론트로 데이터 전송
-        VMLWebviewPanel.sendDataToWebview({
+        OsciloScopeWebviewPanel.sendDataToWebview({
             command: CommandTypes.UPDATE_ALL_DATA,
             payload: data
         });
