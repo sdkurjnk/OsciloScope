@@ -1,7 +1,7 @@
 {
-  "name": "vml-visualizer",
-  "displayName": "VMLVisualizer",
-  "description": "VML Variable Monitoring Logger Visualizer",
+  "name": "osciloscope",
+  "displayName": "OsciloScope",
+  "description": "OsciloScope Variable Monitoring Logger Visualizer",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.120.0"
@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "vml.openVisualizer",
-        "title": "VML: Open Visualizer"
+        "command": "osciloscope.openVisualizer",
+        "title": "OsciloScope: Open Visualizer"
       }
     ]
   },
