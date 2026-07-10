@@ -34,7 +34,7 @@ class VisualizerApp {
   /** 프론트 → 백엔드 발신 */
   sendMessageToBackend(message) {
     if (this._vscode) this._vscode.postMessage(message);
-    else console.log('[VML → Backend]', message);
+    else console.log('[OsciloScope → Backend]', message);
   }
 
   _onVarSelected(varName) {
