@@ -1,0 +1,58 @@
+name: Deploy
+
+on:
+  release:
+    types: [published]
+
+# Only one publish at a time
+concurrency:
+  group: deploy-${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish to Open VSX
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      # Fail fast if the release tag (e.g. v0.0.2) doesn't match the version
+      # in package.json — prevents shipping the wrong or a duplicate version.
+      - name: Verify version matches release tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          echo "package.json: v$PKG  /  release tag: $TAG"
+          if [ "v$PKG" != "$TAG" ]; then
+            echo "::error::package.json version (v$PKG) does not match release tag ($TAG). Bump the version before releasing."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fast sanity gate before shipping (full test suite runs in CI).
+      - name: Lint
+        run: npm run lint
+
+      # `vsce package` triggers `vscode:prepublish` (webpack production build)
+      # and produces the .vsix artifact.
+      - name: Package extension
+        run: npx --yes @vscode/vsce package --out osciloscope.vsix
+
+      - name: Publish to Open VSX
+        run: npx --yes ovsx publish osciloscope.vsix -p "$OVSX_PAT"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
