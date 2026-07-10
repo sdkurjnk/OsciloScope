@@ -6,7 +6,7 @@ on:
 
 # Only one publish at a time
 concurrency:
-  group: deploy-${{ github.workflow }}
+  group: publish-${{ github.workflow }}
   cancel-in-progress: false
 
 permissions:
