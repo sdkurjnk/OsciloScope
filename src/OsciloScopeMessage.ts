@@ -4,7 +4,7 @@ export enum CommandTypes {
     UI_READY         = "UI_READY"
 }
 
-export interface VmlMessage {
+export interface OsciloScopeMessage {
     command : CommandTypes;
     payload : Object;
 }
