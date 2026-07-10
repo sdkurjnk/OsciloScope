@@ -1,6 +1,7 @@
 {
   "name": "osciloscope",
   "displayName": "OsciloScope",
+  "publisher": "sdkurjnk",
   "description": "OsciloScope Variable Monitoring Logger Visualizer",
   "version": "0.0.1",
   "engines": {
