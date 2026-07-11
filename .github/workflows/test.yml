@@ -62,3 +62,19 @@ jobs:
       # runner.temp is cross-platform (no /tmp on Windows).
       - name: Verify packaging
         run: npx --yes @vscode/vsce package --out "${{ runner.temp }}/verify.vsix"
+
+  # Single gate that succeeds only when every matrix leg passes. Require this
+  # one check ("CI") in branch protection instead of listing each OS job.
+  ci:
+    name: CI
+    if: always()
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix result
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "One or more build jobs failed (result: ${{ needs.build.result }})."
+            exit 1
+          fi
+          echo "All build jobs passed."
