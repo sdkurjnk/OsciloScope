@@ -35,15 +35,17 @@ jobs:
 
       # Guard against publishing a version that doesn't match the release tag.
       # Tags must be "vX.Y.Z" and match package.json exactly (v0.0.1 -> 0.0.1).
+      # Pass event data via env (not inline ${{ }}) to avoid script injection.
       - name: Verify tag matches package.json version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          PKG: ${{ steps.version.outputs.version }}
         run: |
-          tag="${{ github.event.release.tag_name }}"
-          pkg="${{ steps.version.outputs.version }}"
-          if [ "$tag" != "v$pkg" ]; then
-            echo "::error::Release tag ($tag) must be 'v$pkg' to match package.json version ($pkg)."
+          if [ "$TAG" != "v$PKG" ]; then
+            echo "::error::Release tag ($TAG) must be 'v$PKG' to match package.json version ($PKG)."
             exit 1
           fi
-          echo "Tag matches package.json version: $tag"
+          echo "Tag matches package.json version: $TAG"
 
       - name: Install dependencies
         run: npm ci
