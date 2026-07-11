@@ -33,6 +33,18 @@ jobs:
         id: version
         run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
 
+      # Guard against publishing a version that doesn't match the release tag.
+      # Tags must be "vX.Y.Z" and match package.json exactly (v0.0.1 -> 0.0.1).
+      - name: Verify tag matches package.json version
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          pkg="${{ steps.version.outputs.version }}"
+          if [ "$tag" != "v$pkg" ]; then
+            echo "::error::Release tag ($tag) must be 'v$pkg' to match package.json version ($pkg)."
+            exit 1
+          fi
+          echo "Tag matches package.json version: $tag"
+
       - name: Install dependencies
         run: npm ci
 
