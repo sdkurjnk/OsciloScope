@@ -12,10 +12,21 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: this workflow only needs to read the repo.
+permissions:
+  contents: read
+
 jobs:
   build:
-    name: Lint, Compile & Test
-    runs-on: ubuntu-latest
+    name: Lint, Compile & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    strategy:
+      # Run every OS to completion so one platform failure still reports the rest.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout
@@ -36,12 +47,18 @@ jobs:
       - name: Type-check & compile
         run: npm run compile
 
-      # vscode-test launches a headless VS Code instance, which needs a
-      # virtual display on Linux runners.
-      - name: Test
+      # vscode-test launches a headless VS Code instance. On Linux that needs a
+      # virtual display (xvfb); Windows and macOS runners have one already.
+      - name: Test (Linux)
+        if: runner.os == 'Linux'
         run: xvfb-run -a npm test
+
+      - name: Test (Windows / macOS)
+        if: runner.os != 'Linux'
+        run: npm test
 
       # Verify the extension packages cleanly (no publish). Catches issues
       # that lint/compile/test miss, e.g. template README, missing files.
+      # runner.temp is cross-platform (no /tmp on Windows).
       - name: Verify packaging
-        run: npx --yes @vscode/vsce package --out /tmp/verify.vsix
+        run: npx --yes @vscode/vsce package --out "${{ runner.temp }}/verify.vsix"
