@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [master, develop]
+
+# Cancel in-progress runs for the same ref (e.g. new push to a PR)
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: this workflow only needs to read the repo.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Lint, Compile & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    strategy:
+      # Run every OS to completion so one platform failure still reports the rest.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check & compile
+        run: npm run compile
+
+      # vscode-test launches a headless VS Code instance. On Linux that needs a
+      # virtual display (xvfb); Windows and macOS runners have one already.
+      - name: Test (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm test
+
+      - name: Test (Windows / macOS)
+        if: runner.os != 'Linux'
+        run: npm test
+
+      # Verify the extension packages cleanly (no publish). Catches issues
+      # that lint/compile/test miss, e.g. template README, missing files.
+      # runner.temp is cross-platform (no /tmp on Windows).
+      - name: Verify packaging
+        run: npx --yes @vscode/vsce package --out "${{ runner.temp }}/verify.vsix"
+
+  # Single gate that succeeds only when every matrix leg passes. Require this
+  # one check ("CI") in branch protection instead of listing each OS job.
+  ci:
+    name: CI
+    if: always()
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix result
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "One or more build jobs failed (result: ${{ needs.build.result }})."
+            exit 1
+          fi
+          echo "All build jobs passed."

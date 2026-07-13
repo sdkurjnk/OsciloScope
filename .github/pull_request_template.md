@@ -21,3 +21,4 @@
 - [ ] I have performed a self-review of my own code.
 - [ ] I have verified and tested the changes successfully.
 - [ ] I have removed unnecessary debugging logs (e.g., console.log, print) and comments.
+- [ ] **I tested whether the OsciloScope runs well in my PC.**
