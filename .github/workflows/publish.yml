@@ -36,7 +36,11 @@ jobs:
         id: version
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: echo "version=$(node scripts/resolve-version.mjs --write)" >> "$GITHUB_OUTPUT"
+        run: |
+          # Assign first so a bad tag (script exit 1) fails the step. In an
+          # `echo "v=$(cmd)"` form the substitution's failure is masked by echo.
+          version="$(node scripts/resolve-version.mjs --write)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: npm ci
