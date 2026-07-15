@@ -1,8 +1,13 @@
 {
   "name": "osciloscope",
   "displayName": "OsciloScope",
+  "publisher": "sdkurjnk",
   "description": "OsciloScope Variable Monitoring Logger Visualizer",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sdkurjnk/OsciloScope.git"
+  },
   "engines": {
     "vscode": "^1.120.0"
   },
