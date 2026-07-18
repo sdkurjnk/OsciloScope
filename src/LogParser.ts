@@ -45,14 +45,18 @@ export class LogParser {
     }
 
     /**
-     * 변수 식별 키
-     * - GLOBAL: 프로그램 전체에 하나뿐이지만 수정된 프레임에 따라 call_id가 달라짐
-     *           → 이름만으로 키잉해서 하나로 유지
-     * - LOCAL/ENCLOSING: 같은 이름이라도 호출(재귀 포함)마다 별개 인스턴스
-     *           → name@call_id 로 분리
+     * 변수 식별 키 (LEGB 기준)
+     * - LOCAL: 변수가 자기 프레임에서만 변경됨 → 호출(재귀 포함)마다 별개 인스턴스
+     *          → name@call_id 로 분리
+     * - ENCLOSING/GLOBAL: 변수는 바깥 스코프 소유인데 call_id는 "변경이 일어난
+     *          안쪽 프레임"을 가리킴 → call_id로 키잉하면 하나의 변수가 쪼개짐
+     *          → 이름만으로 키잉해서 단일 타임라인 유지
+     * ※ ENCLOSING 한계: 바깥 함수가 여러 번 호출되면 각 인스턴스의 클로저 변수가
+     *    이름 기준으로 합쳐짐. 정확히 나누려면 로그에 소유 프레임의 call_id
+     *    (owner_call_id)가 필요 — 백엔드 확장 후보.
      */
     private getVarKey(log: RawLog): string {
-        if (log.domain === 'GLOBAL' || log.call_id === null) {
+        if (log.domain !== 'LOCAL' || log.call_id === null) {
             return log.name;
         }
         return `${log.name}@${log.call_id}`;
