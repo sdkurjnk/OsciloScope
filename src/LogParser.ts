@@ -63,12 +63,16 @@ export class LogParser {
     }
 
     /**
-     * 사이드바 그룹 키: 스코프 단위 (Global / Local / Enclosing)
+     * 사이드바 그룹 키: Global / Local 2개로 표시 (팀 결정)
+     * - ENCLOSING은 함수 스코프 변수이므로 Local 그룹으로 표시
+     *   (LEGB 규칙은 화면 분류가 아니라 getVarKey의 키잉 로직에만 적용)
+     * - 정확한 스코프(Local/Enclosing/Global)는 varData.scope에 유지되어
+     *   타임라인 헤더에 표시됨
      * ※ func/call_id 는 varData 메타에 남아 있으므로,
      *   추후 함수별(func1, func2 …) 그룹핑으로 확장 시 이 함수만 바꾸면 됨
      */
     private getGroupKey(log: RawLog): string {
-        return LogParser.DOMAIN_LABELS[log.domain] ?? 'Local';
+        return log.domain === 'GLOBAL' ? 'Global' : 'Local';
     }
 
     public transformData(rawLogs: RawLog[]): Object {
