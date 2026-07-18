@@ -1,15 +1,25 @@
 import * as fs from 'fs';
 
 interface RawLog {
-    name   : string;
-    data   : any;
-    event  : string;
-    domain : string;  
-    line   : number;  
+    name           : string;
+    data           : any;
+    event          : string;          // "init" | "updated" | "deleted"
+    domain         : string;          // "LOCAL" | "GLOBAL" | "ENCLOSING" | "UNKNOWN"
+    line           : number | null;
+    func           : string | null;   // 이벤트가 발생한 함수, 모듈 최상위는 "<module>"
+    call_id        : number | null;   // 함수 호출 1건 고유 ID (연속적이지 않음 — 불투명 ID로 취급)
+    parent_call_id : number | null;   // 부모 프레임의 call_id, 최상위면 null
+    call_depth     : number | null;   // 호출 스택 깊이, 1부터
 }
 
 export class LogParser {
     private logFilePath: string;
+
+    private static readonly DOMAIN_LABELS: { [key: string]: string } = {
+        LOCAL     : 'Local',
+        GLOBAL    : 'Global',
+        ENCLOSING : 'Enclosing',
+    };
 
     constructor(logFilePath: string) {
         this.logFilePath = logFilePath;
@@ -22,44 +32,87 @@ export class LogParser {
         }
         const fileContent = fs.readFileSync(this.logFilePath, 'utf-8');
         const lines = fileContent.trim().split('\n');
-        return lines.map(line => JSON.parse(line));
-    }
-
-    public transformData(rawLogs: RawLog[]): Object {
-    const result: { [scope: string]: any[] } = {};
-    const varMap: { [name: string]: any } = {};
-    const stepCounter: { [name: string]: number } = {};
-
-    for (const log of rawLogs) {
-        if (!varMap[log.name]) {
-            varMap[log.name] = {
-                varName: log.name,
-                type: typeof log.data,
-                scope: log.domain === 'LOCAL' ? 'Local' : 'Global',
-                history: []
-            };
-            stepCounter[log.name] = 0;
-        }
-
-        stepCounter[log.name]++;
-
-        const value = log.event === 'deleted' ? null : log.data;
-
-        varMap[log.name].history.push({
-            step  : stepCounter[log.name],
-            line: log.line,
-            value : value
+        return lines.map(line => {
+            const log = JSON.parse(line);
+            // 구버전 로그(4개 속성 없음) 호환: undefined → null 정규화
+            log.line           = log.line           ?? null;
+            log.func           = log.func           ?? null;
+            log.call_id        = log.call_id        ?? null;
+            log.parent_call_id = log.parent_call_id ?? null;
+            log.call_depth     = log.call_depth     ?? null;
+            return log as RawLog;
         });
     }
 
-    for (const varData of Object.values(varMap)) {
-        const scope = varData.scope;
-        if (!result[scope]) {
-            result[scope] = [];
+    /**
+     * 변수 식별 키
+     * - GLOBAL: 프로그램 전체에 하나뿐이지만 수정된 프레임에 따라 call_id가 달라짐
+     *           → 이름만으로 키잉해서 하나로 유지
+     * - LOCAL/ENCLOSING: 같은 이름이라도 호출(재귀 포함)마다 별개 인스턴스
+     *           → name@call_id 로 분리
+     */
+    private getVarKey(log: RawLog): string {
+        if (log.domain === 'GLOBAL' || log.call_id === null) {
+            return log.name;
         }
-        result[scope].push(varData);
+        return `${log.name}@${log.call_id}`;
     }
 
-    return result;
-}
+    /**
+     * 사이드바 그룹 키: 스코프 단위 (Global / Local / Enclosing)
+     * ※ func/call_id 는 varData 메타에 남아 있으므로,
+     *   추후 함수별(func1, func2 …) 그룹핑으로 확장 시 이 함수만 바꾸면 됨
+     */
+    private getGroupKey(log: RawLog): string {
+        return LogParser.DOMAIN_LABELS[log.domain] ?? 'Local';
+    }
+
+    public transformData(rawLogs: RawLog[]): Object {
+        const result: { [group: string]: any[] } = {};
+        const varMap: { [key: string]: any } = {};
+        const stepCounter: { [key: string]: number } = {};
+
+        for (const log of rawLogs) {
+            const key = this.getVarKey(log);
+
+            if (!varMap[key]) {
+                // 변수 단위 메타는 첫 등장 시 한 번만 저장 (history 행마다 반복 X)
+                varMap[key] = {
+                    varKey       : key,
+                    varName      : log.name,
+                    type         : typeof log.data,
+                    scope        : LogParser.DOMAIN_LABELS[log.domain] ?? 'Unknown',
+                    func         : log.func,
+                    callId       : log.call_id,
+                    parentCallId : log.parent_call_id,
+                    callDepth    : log.call_depth,
+                    group        : this.getGroupKey(log),
+                    history      : []
+                };
+                stepCounter[key] = 0;
+            }
+
+            stepCounter[key]++;
+
+            const value = log.event === 'deleted' ? null : log.data;
+
+            // 스텝 단위 속성만 행마다 기록
+            varMap[key].history.push({
+                step  : stepCounter[key],
+                line  : log.line,
+                value : value,
+                event : log.event
+            });
+        }
+
+        for (const varData of Object.values(varMap)) {
+            const group = varData.group;
+            if (!result[group]) {
+                result[group] = [];
+            }
+            result[group].push(varData);
+        }
+
+        return result;
+    }
 }
