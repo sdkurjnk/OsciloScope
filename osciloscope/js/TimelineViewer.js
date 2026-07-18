@@ -2,8 +2,9 @@
 
 /**
  * TimelineViewer
- * - 선택된 변수의 변경 히스토리 렌더링
- * - 값 변화 계산 (증가 / 감소 / 유지 / 초기)
+ * - 선택된 변수의 변경 히스토리 렌더링 (스텝 단위: value / event / line)
+ * - 헤더에 변수 단위 속성(func, call_id, parent_call_id, depth)을 뱃지로 한 번만 표시
+ * - 값 변화 계산 (증가 / 감소 / 유지 / 초기 / 삭제)
  */
 class TimelineViewer {
   constructor() {
@@ -11,13 +12,30 @@ class TimelineViewer {
     this._headerEl  = document.getElementById('tlHdr');
     this._varNameEl = document.getElementById('tlName');
     this._scopeEl   = document.getElementById('tlScope');
+    this._badgesEl  = document.getElementById('tlBadges');
     this._countEl   = document.getElementById('tlCnt');
   }
 
-  renderHeader(varName, scope) {
+  /** 변수 단위 메타를 헤더에 렌더링 — 행마다 반복하지 않는다 */
+  renderHeader(varData) {
     this._headerEl.style.display = 'flex';
-    this._varNameEl.textContent = varName;
-    this._scopeEl.textContent = '· ' + (scope || '—');
+    this._varNameEl.textContent = varData.varName;
+    this._scopeEl.textContent = '· ' + (varData.scope || '—');
+
+    const badges = [];
+    if (varData.func !== null && varData.func !== undefined) {
+      badges.push(`<span class="mb mb-func">${varData.func}</span>`);
+    }
+    if (varData.callId !== null && varData.callId !== undefined) {
+      badges.push(`<span class="mb mb-call">call #${varData.callId}</span>`);
+    }
+    if (varData.parentCallId !== null && varData.parentCallId !== undefined) {
+      badges.push(`<span class="mb mb-parent">← #${varData.parentCallId}</span>`);
+    }
+    if (varData.callDepth !== null && varData.callDepth !== undefined) {
+      badges.push(`<span class="mb mb-depth">depth ${varData.callDepth}</span>`);
+    }
+    this._badgesEl.innerHTML = badges.join('');
   }
 
   renderTimeline(rows) {
@@ -41,24 +59,26 @@ class TimelineViewer {
         <p>사이드바에서 변수를 선택하세요</p>
       </div>`;
     this._headerEl.style.display = 'none';
+    this._badgesEl.innerHTML = '';
     this._countEl.textContent = '';
   }
 
   _createRow(row, idx, rows) {
     const prev = idx > 0 ? rows[idx - 1].value : null;
     const changed = idx > 0 && String(prev) !== String(row.value);
-    const tag = this._calcChange(prev, row.value, idx);
+    const tag = this._calcChange(prev, row.value, idx, row.event);
     const lineNum = row.line ?? (row.step ?? idx + 1);
+    const deleted = row.event === 'deleted';
 
     const el = document.createElement('div');
-    el.className = 'hr' + (changed ? ' changed' : '');
+    el.className = 'hr' + (changed ? ' changed' : '') + (deleted ? ' deleted' : '');
     el.innerHTML = `
       <div class="li">
         <div class="ld"></div>
         <div class="ln">L${lineNum}</div>
       </div>
       <div class="hc">
-        <span class="hv">${this._formatValue(row.value)}</span>
+        <span class="hv">${deleted ? '—' : this._formatValue(row.value)}</span>
         <span class="ct ${tag.cls}">${tag.text}</span>
       </div>`;
     return el;
@@ -70,8 +90,9 @@ class TimelineViewer {
     return String(v);
   }
 
-  _calcChange(prev, curr, idx) {
-    if (idx === 0) return { cls: 'new', text: 'init' };
+  _calcChange(prev, curr, idx, event) {
+    if (event === 'deleted') return { cls: 'del', text: 'deleted' };
+    if (idx === 0 || event === 'init') return { cls: 'new', text: 'init' };
     const pn = parseFloat(prev), cn = parseFloat(curr);
     if (!isNaN(pn) && !isNaN(cn)) {
       const d = cn - pn;
