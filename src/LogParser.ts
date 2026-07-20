@@ -4,21 +4,21 @@ interface RawLog {
     name           : string;
     data           : any;
     event          : string;          // "init" | "updated" | "deleted"
-    domain         : string;          // "LOCAL" | "GLOBAL" | "ENCLOSING" | "UNKNOWN"
+    domain         : string;          // "GLOBAL" | "LOCAL" (소유 프레임 기준)
     line           : number | null;
     func           : string | null;   // 이벤트가 발생한 함수, 모듈 최상위는 "<module>"
-    call_id        : number | null;   // 함수 호출 1건 고유 ID (연속적이지 않음 — 불투명 ID로 취급)
+    call_id        : number | null;   // 이벤트가 발생한 프레임의 고유 ID (불투명 ID로 취급)
     parent_call_id : number | null;   // 부모 프레임의 call_id, 최상위면 null
     call_depth     : number | null;   // 호출 스택 깊이, 1부터
+    var_id         : number | null;   // 변수가 정의된 소유 프레임의 call_id (정체성 키)
 }
 
 export class LogParser {
     private logFilePath: string;
 
     private static readonly DOMAIN_LABELS: { [key: string]: string } = {
-        LOCAL     : 'Local',
-        GLOBAL    : 'Global',
-        ENCLOSING : 'Enclosing',
+        LOCAL  : 'Local',
+        GLOBAL : 'Global',
     };
 
     constructor(logFilePath: string) {
@@ -30,43 +30,28 @@ export class LogParser {
         const lines = fileContent.trim().split('\n');
         return lines.map(line => {
             const log = JSON.parse(line);
-            // 구버전 로그(4개 속성 없음) 호환: undefined → null 정규화
+            // 구버전 로그 호환: undefined → null 정규화
             log.line           = log.line           ?? null;
             log.func           = log.func           ?? null;
             log.call_id        = log.call_id        ?? null;
             log.parent_call_id = log.parent_call_id ?? null;
             log.call_depth     = log.call_depth     ?? null;
+            log.var_id         = log.var_id         ?? null;
             return log as RawLog;
         });
     }
 
-    /**
-     * 변수 식별 키 (LEGB 기준)
-     * - LOCAL: 변수가 자기 프레임에서만 변경됨 → 호출(재귀 포함)마다 별개 인스턴스
-     *          → name@call_id 로 분리
-     * - ENCLOSING/GLOBAL: 변수는 바깥 스코프 소유인데 call_id는 "변경이 일어난
-     *          안쪽 프레임"을 가리킴 → call_id로 키잉하면 하나의 변수가 쪼개짐
-     *          → 이름만으로 키잉해서 단일 타임라인 유지
-     * ※ ENCLOSING 한계: 바깥 함수가 여러 번 호출되면 각 인스턴스의 클로저 변수가
-     *    이름 기준으로 합쳐짐. 정확히 나누려면 로그에 소유 프레임의 call_id
-     *    (owner_call_id)가 필요 — 백엔드 확장 후보.
-     */
+    // var_id(소유 프레임 call_id)로 변수 정체성을 키잉한다.
+    // 수정 프레임(call_id)이 달라도 소유 프레임이 같으면 같은 변수로 묶인다.
+    // 폴백: var_id가 없는 구버전 로그는 이름만으로 키잉.
     private getVarKey(log: RawLog): string {
-        if (log.domain !== 'LOCAL' || log.call_id === null) {
+        if (log.var_id === null) {
             return log.name;
         }
-        return `${log.name}@${log.call_id}`;
+        return `${log.name}@${log.var_id}`;
     }
 
-    /**
-     * 사이드바 그룹 키: Global / Local 2개로 표시 (팀 결정)
-     * - ENCLOSING은 함수 스코프 변수이므로 Local 그룹으로 표시
-     *   (LEGB 규칙은 화면 분류가 아니라 getVarKey의 키잉 로직에만 적용)
-     * - 정확한 스코프(Local/Enclosing/Global)는 varData.scope에 유지되어
-     *   타임라인 헤더에 표시됨
-     * ※ func/call_id 는 varData 메타에 남아 있으므로,
-     *   추후 함수별(func1, func2 …) 그룹핑으로 확장 시 이 함수만 바꾸면 됨
-     */
+    // 사이드바 그룹: GLOBAL → Global, LOCAL → Local
     private getGroupKey(log: RawLog): string {
         return log.domain === 'GLOBAL' ? 'Global' : 'Local';
     }
