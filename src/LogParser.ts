@@ -26,10 +26,6 @@ export class LogParser {
     }
 
     public parseLogFile(): RawLog[] {
-        if (!fs.existsSync(this.logFilePath)) {
-            console.error(`파일을 찾을 수 없어요: ${this.logFilePath}`);
-            return [];
-        }
         const fileContent = fs.readFileSync(this.logFilePath, 'utf-8');
         const lines = fileContent.trim().split('\n');
         return lines.map(line => {
