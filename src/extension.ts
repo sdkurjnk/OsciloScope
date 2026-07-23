@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 import { LogParser } from './LogParser';
 import { OsciloScopeWebviewPanel } from './OsciloScopeWebviewPanel';
 import { CommandTypes } from './OsciloScopeMessage';
@@ -11,7 +12,13 @@ export function activate(context: vscode.ExtensionContext) {
 
         // ① LogParser 생성
         const logPath = path.join(context.extensionUri.fsPath, 'log.jsonl');
-		const parser = new LogParser(logPath);
+
+        if (!fs.existsSync(logPath)) {
+            vscode.window.showErrorMessage(`OsciloScope: 로그 파일을 찾을 수 없습니다. (${logPath})`);
+            return;
+        }
+
+        const parser = new LogParser(logPath);
 
         // ② 파일 읽기
         const rawLogs = parser.parseLogFile();

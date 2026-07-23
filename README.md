@@ -1,4 +1,10 @@
-# OsciloScope
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)"  srcset="https://raw.githubusercontent.com/sdkurjnk/OsciloScope/master/assets/OsciloScope-banner-dark@2x.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/sdkurjnk/OsciloScope/master/assets/OsciloScope-banner-light@2x.png">
+    <img src="https://raw.githubusercontent.com/sdkurjnk/OsciloScope/master/assets/OsciloScope-banner-dark@2x.png" alt="OsciloScope" width="100%">
+  </picture>
+</p>
 
 [![Version](https://img.shields.io/github/package-json/v/sdkurjnk/OsciloScope)](https://github.com/sdkurjnk/OsciloScope/releases)
 
