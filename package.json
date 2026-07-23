@@ -3,7 +3,7 @@
   "displayName": "OsciloScope",
   "publisher": "sdkurjnk",
   "description": "OsciloScope Variable Monitoring Logger Visualizer",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sdkurjnk/OsciloScope.git"
@@ -25,6 +25,8 @@
     ]
   },
   "scripts": {
+    "version:resolve": "node scripts/resolve-version.mjs",
+    "version:apply": "node scripts/resolve-version.mjs --write",
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
     "watch": "webpack --watch",

@@ -31,6 +31,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history + tags so tag-driven versioning (git describe) works.
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -56,6 +59,11 @@ jobs:
       - name: Test (Windows / macOS)
         if: runner.os != 'Linux'
         run: npm test
+
+      # Inject the git-derived version (X.Y.Z-dev.N off the latest tag, or 0.0.0
+      # before the first release) so packaging verifies against a real version.
+      - name: Resolve version from git tags
+        run: node scripts/resolve-version.mjs --write
 
       # Verify the extension packages cleanly (no publish). Catches issues
       # that lint/compile/test miss, e.g. template README, missing files.
