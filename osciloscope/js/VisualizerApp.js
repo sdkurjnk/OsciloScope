@@ -8,7 +8,7 @@
 class VisualizerApp {
   constructor() {
     this._dataManager    = new DataManager();
-    this._sidebarManager = new SidebarManager(v => this._onVarSelected(v));
+    this._sidebarManager = new SidebarManager(k => this._onVarSelected(k));
     this._timelineViewer = new TimelineViewer();
     this._vscode = (typeof acquireVsCodeApi !== 'undefined') ? acquireVsCodeApi() : null;
   }
@@ -26,8 +26,8 @@ class VisualizerApp {
       this._dataManager.updateData(message.payload);
       this._sidebarManager.renderSidebar(this._dataManager.getGroupedData());
       this._setStatus('연결됨', 'connected');
-      if (this._dataManager.currentVarName)
-        this._renderTimeline(this._dataManager.currentVarName);
+      if (this._dataManager.currentVarKey)
+        this._renderTimeline(this._dataManager.currentVarKey);
     }
   }
 
@@ -37,17 +37,20 @@ class VisualizerApp {
     else console.log('[OsciloScope → Backend]', message);
   }
 
-  _onVarSelected(varName) {
-    this._dataManager.currentVarName = varName;
-    this._renderTimeline(varName);
-    this.sendMessageToBackend({ command: CommandTypes.VARIABLE_CHANGED, payload: { varName } });
+  _onVarSelected(varKey) {
+    this._dataManager.currentVarKey = varKey;
+    this._renderTimeline(varKey);
+    const found = this._dataManager.getVarByKey(varKey);
+    this.sendMessageToBackend({
+      command: CommandTypes.VARIABLE_CHANGED,
+      payload: { varKey, varName: found ? found.varName : null }
+    });
   }
 
-  _renderTimeline(varName) {
-    const found = this._dataManager.getTimelineByVar(varName);
+  _renderTimeline(varKey) {
+    const found = this._dataManager.getVarByKey(varKey);
     if (!found) { this._timelineViewer.clearTimeline(); return; }
-    const scope = this._dataManager.getScopeByVar(varName);
-    this._timelineViewer.renderHeader(varName, scope);
+    this._timelineViewer.renderHeader(found);
     this._timelineViewer.renderTimeline(found.history);
   }
 
