@@ -93,3 +93,25 @@
 .ct.dec { background: rgba(244,135,113,.15); color: #f48771; }
 .ct.new { background: rgba(79,193,255,.15); color: #4fc1ff; }
 .ct.same { color: #444; background: #2a2a2a; border: 1px solid #3c3c3c; }
+
+/* ── 변수 단위 메타 뱃지 (헤더에 한 번만 표시, 행마다 반복 X) ── */
+.tl-badges { display: flex; gap: 4px; align-items: center; }
+.mb {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #2a2a2a;
+  border: 1px solid #3c3c3c;
+  color: #858585;
+  white-space: nowrap;
+}
+.mb-func   { color: #dcdcaa; border-color: #4a4a2f; }
+.mb-call   { color: #4fc1ff; border-color: #1b4f72; }
+.mb-parent { color: #c586c0; border-color: #4b2f4a; }
+.mb-depth  { color: #4ec9b0; border-color: #2f4a44; }
+
+/* ── deleted 이벤트 행 ── */
+.hr.deleted .hc { border-color: #5a1d1d; background: rgba(94,24,24,.12); }
+.hr.deleted .hv { color: #f48771; text-decoration: line-through; }
+.hr.deleted .ld { background: #f48771; box-shadow: 0 0 0 3px rgba(244,135,113,.15); }
+.ct.del { background: rgba(244,135,113,.15); color: #f48771; }

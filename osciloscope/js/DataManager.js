@@ -2,47 +2,34 @@
 
 /**
  * DataManager
- * - 백엔드에서 받은 raw payload 보관
- * - Global / Local 두 버킷으로 그룹화
- * - 변수명으로 히스토리/스코프 조회
+ * - 백엔드에서 받은 raw payload 보관 (그룹핑은 백엔드 transformData에서 완료)
+ * - varKey(고유 키)로 변수 조회 — 재귀/중복 호출로 같은 이름 변수가
+ *   여러 개 있어도 정확한 인스턴스를 찾는다
  */
 class DataManager {
   constructor() {
     this._data = {};
-    this._currentVarName = null;
+    this._currentVarKey = null;
   }
 
   updateData(payload) {
     this._data = payload || {};
   }
 
-  /** 원본 스코프 키를 Global / Local 두 버킷으로 묶어 반환 */
+  /** 백엔드가 만든 그룹 구조(Global / func #call_id)를 그대로 반환 */
   getGroupedData() {
-    const result = {};
-    for (const [scope, vars] of Object.entries(this._data)) {
-      const bucket = (scope === 'Global') ? 'Global' : 'Local';
-      if (!result[bucket]) result[bucket] = [];
-      result[bucket].push(...vars);
-    }
-    return result;
+    return this._data;
   }
 
-  getTimelineByVar(varName) {
+  /** varKey로 변수 데이터 조회 (varName 아님 — 이름은 중복될 수 있음) */
+  getVarByKey(varKey) {
     for (const vars of Object.values(this._data)) {
-      const found = vars.find(v => v.varName === varName);
+      const found = vars.find(v => v.varKey === varKey);
       if (found) return found;
     }
     return null;
   }
 
-  getScopeByVar(varName) {
-    for (const [scope, vars] of Object.entries(this._data)) {
-      if (vars.find(v => v.varName === varName))
-        return scope === 'Global' ? 'Global' : 'Local';
-    }
-    return null;
-  }
-
-  get currentVarName() { return this._currentVarName; }
-  set currentVarName(v) { this._currentVarName = v; }
+  get currentVarKey() { return this._currentVarKey; }
+  set currentVarKey(v) { this._currentVarKey = v; }
 }
