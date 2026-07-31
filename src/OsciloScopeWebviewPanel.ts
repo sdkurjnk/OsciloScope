@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
+import { OsciloScopeMessage, CommandTypes, MessageHandlers } from './OsciloScopeMessage';
 
 export class OsciloScopeWebviewPanel {
 
     private static panel: vscode.WebviewPanel;
 
-    public static createOrShow(extensionUri: vscode.Uri): void {
+    public static createOrShow(extensionUri: vscode.Uri, handlers: MessageHandlers = {}): void {
     if (OsciloScopeWebviewPanel.panel) {
         OsciloScopeWebviewPanel.panel.reveal(vscode.ViewColumn.One);
         return;
@@ -42,7 +42,7 @@ export class OsciloScopeWebviewPanel {
         OsciloScopeWebviewPanel.panel = undefined as any;
     });
 
-    OsciloScopeWebviewPanel.receiveDataFromWebview();
+    OsciloScopeWebviewPanel.receiveDataFromWebview(handlers);
     }
 
     public static sendDataToWebview(message: OsciloScopeMessage): void {
@@ -53,7 +53,7 @@ export class OsciloScopeWebviewPanel {
         OsciloScopeWebviewPanel.panel.webview.postMessage(message);
     }
 
-    public static receiveDataFromWebview(): void {
+    public static receiveDataFromWebview(handlers: MessageHandlers = {}): void {
         OsciloScopeWebviewPanel.panel.webview.onDidReceiveMessage((message: OsciloScopeMessage) => {
             switch (message.command) {
                 case CommandTypes.UI_READY:
@@ -61,6 +61,9 @@ export class OsciloScopeWebviewPanel {
                     break;
                 case CommandTypes.VARIABLE_CHANGED:
                     console.log('[OsciloScopeWebviewPanel] 선택된 변수 변경:', message.payload);
+                    break;
+                default:
+                    handlers[message.command]?.(message.payload);
                     break;
             }
         });
