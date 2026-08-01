@@ -56,3 +56,13 @@ body {
   overflow: hidden;
   background: #1e1e1e;
 }
+
+/* ── 헤더 경로 표시 (로드된 로그 파일 절대경로) ── */
+.hdr .path {
+  font-size: 11px;
+  color: #6a9955;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hdr .path .none { color: #6b6b6b; }
