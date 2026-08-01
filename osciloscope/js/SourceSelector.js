@@ -2,10 +2,10 @@
 
 /**
  * SourceSelector
- * - 사이드바 SOURCE 영역(로그 파일 선택)의 화면 전용 핸들러
- * - 실제 파일 다이얼로그(showOpenDialog)와 경로 수신은 백엔드 연동 시 구현 (follow-up)
- * - VisualizerApp 이 acquireVsCodeApi() 를 이미 단일 호출하므로 여기선 재호출하지 않는다
- *   (중복 호출은 예외 발생). 백엔드 배선은 VisualizerApp 브릿지를 통해 붙일 예정.
+ * - 사이드바 SOURCE 영역(로그 파일 선택) 배선
+ * - 버튼 클릭 → SELECT_LOG_FILE 발신
+ * - LOG_FILE_LOADED 수신 → 파일명/절대경로 표시
+ * - 백엔드 브릿지는 VisualizerApp(window.osApp)을 재사용 (acquireVsCodeApi 중복 호출 방지)
  */
 (function () {
   const srcRow  = document.getElementById('srcRow');
@@ -14,21 +14,30 @@
   const pickBtn = document.getElementById('pickBtn');
   if (!pickBtn) return;
 
-  // 백엔드가 절대경로를 넘겨주면 화면을 갱신하는 진입점
-  window.OsciloScopeSource = {
-    setLogPath(absolutePath) {
-      if (!absolutePath) return;
-      const base = absolutePath.split(/[\\/]/).pop();
-      srcRow.classList.add('set');
-      srcName.textContent = base;
-      hdrPath.textContent = absolutePath;
-    }
-  };
+  function setLogFile(fileName, filePath) {
+    if (!filePath) return;
+    srcRow.classList.add('set');
+    srcName.textContent = fileName || filePath.split(/[\\/]/).pop();
+    if (hdrPath) hdrPath.textContent = filePath;
+  }
 
+  // 외부(백엔드 수신 외)에서도 갱신 가능한 진입점 유지
+  window.OsciloScopeSource = { setLogFile };
+
+  // 버튼 클릭 → 백엔드에 파일 선택 다이얼로그 요청
   pickBtn.addEventListener('click', () => {
-    // TODO(backend): 여기서 로그 파일 선택 요청을 백엔드로 전달
-    //   → 백엔드 showOpenDialog(.jsonl, 절대경로) 결과를
-    //     window.OsciloScopeSource.setLogPath(path) 로 회신
-    console.log('[SourceSelector] 로그 파일 선택 요청 (백엔드 연동 예정)');
+    if (window.osApp) {
+      window.osApp.sendMessageToBackend({ command: CommandTypes.SELECT_LOG_FILE, payload: {} });
+    } else {
+      console.log('[SourceSelector] SELECT_LOG_FILE (브라우저 프리뷰)');
+    }
+  });
+
+  // 백엔드 → 선택된 로그 파일 통지 수신
+  window.addEventListener('message', (e) => {
+    const msg = e.data;
+    if (!msg || msg.command !== CommandTypes.LOG_FILE_LOADED) return;
+    const { fileName, filePath } = msg.payload || {};
+    setLogFile(fileName, filePath);
   });
 })();
