@@ -12,17 +12,23 @@ name: Merge Release / Hotfix
 # are already satisfied — that is exactly what "CI" success means — and
 # require-uptodate-develop is bypassed too. See GitFlowPipeline.md §2.
 #
-# Triggered by workflow_run (not pull_request) because at finalize time CI is still
-# pending; we can only merge once the checks report success. This file must live on
-# the default branch (master) for workflow_run to fire.
+# Triggered by workflow_run (not pull_request) because at finalize time the checks are
+# still pending; we can only merge once they report success. We listen to BOTH required
+# workflows — "CI" (build/test in test.yml) and "PR Gates" (the metadata checks in
+# pr-checklist.yml: Verify PR Checklist / Version Label / Serialize Guard). Either one
+# completing wakes us; pulls.merge below enforces that ALL required checks are green, so
+# whichever finishes last is the run that actually merges. Listening to only "CI" would
+# leave a gap: if CI (a multi-OS build, minutes) somehow finished before PR Gates (fast
+# metadata, seconds), the merge would 405 with no event left to retry it. This file must
+# live on the default branch (master) for workflow_run to fire.
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CI", "PR Gates"]
     types: [completed]
 
-# Both release PRs share the same head branch and their two CI runs finish near
-# each other. Serialize per-branch and keep pulls.merge idempotent (405/409 tolerated)
-# so we never double-merge or fail on an already-merged PR.
+# Both release PRs share the same head branch, and each fires CI + PR Gates, so several
+# runs complete near each other. Serialize per-branch and keep pulls.merge idempotent
+# (405/409 tolerated) so we never double-merge or fail on an already-merged PR.
 concurrency:
   group: merge-release-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: false
@@ -31,7 +37,7 @@ jobs:
   merge:
     name: Merge release/hotfix PRs directly
     runs-on: ubuntu-latest
-    # Only for a green CI run on a release/* or hotfix/* head.
+    # Only for a green CI / PR Gates run on a release/* or hotfix/* head.
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       (startsWith(github.event.workflow_run.head_branch, 'release/') ||
@@ -70,8 +76,8 @@ jobs:
                 });
                 core.notice(`Merged #${pr.number} (${branch} → ${pr.base.ref}).`);
               } catch (e) {
-                // 405: not mergeable yet (the OTHER PR's checks may still be pending) —
-                //      that PR's own CI completion re-triggers this workflow.
+                // 405: not mergeable yet (a required check may still be pending) — the
+                //      next CI / PR Gates completion on this head re-triggers this workflow.
                 // 409: base moved between list and merge — same re-trigger covers it.
                 if (e.status === 405 || e.status === 409) {
                   core.warning(`#${pr.number} not mergeable yet (${e.status}); will retry on next run.`);
