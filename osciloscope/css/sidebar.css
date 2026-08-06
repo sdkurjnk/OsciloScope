@@ -115,13 +115,6 @@
   padding: 12px;
   border-bottom: 1px solid #3c3c3c;
 }
-.sb-brand img {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  flex-shrink: 0;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
-}
 .sb-brand .wm { line-height: 1.15; }
 .sb-brand .wm .nm {
   font-size: 13px;
