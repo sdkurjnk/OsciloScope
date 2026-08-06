@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
 import { ToolsProvider } from './ToolsProvider';
@@ -15,10 +17,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         this.view = webviewView;
 
         webviewView.webview.options = {
-            enableScripts: true
+            enableScripts: true,
+            localResourceRoots: [
+                vscode.Uri.joinPath(this.extensionUri, 'osciloscope')
+            ]
         };
 
-        webviewView.webview.html = this.getPlaceholderHtml();
+        webviewView.webview.html = this.getHtml(webviewView.webview);
 
         webviewView.webview.onDidReceiveMessage((message: OsciloScopeMessage) => {
             switch (message.command) {
@@ -65,13 +70,18 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         this.view?.webview.postMessage(message);
     }
 
-    // FE 담당자가 실제 사이드바 화면(HTML/CSS/JS)으로 교체할 임시 placeholder
-    private getPlaceholderHtml(): string {
-        return /* html */ `<!DOCTYPE html>
-<html lang="ko">
-<body>
-    <p>OsciloScope Sidebar (placeholder)</p>
-</body>
-</html>`;
-    }
+    // osciloscope/sidebar-view/index.html을 읽어와서 css/js 상대경로를
+    // 웹뷰가 접근 가능한 URI로 치환
+    private getHtml(webview: vscode.Webview): string {
+        const htmlPath = path.join(this.extensionUri.fsPath, 'osciloscope', 'sidebar-view', 'index.html');
+        let html = fs.readFileSync(htmlPath, 'utf-8');
+
+        html = html.replace(/(href|src)="(css|js)\/([^"]+)"/g, (match, attr, folder, file) => {
+            const resourcePath = vscode.Uri.joinPath(this.extensionUri, 'osciloscope', 'sidebar-view', folder, file);
+            const webviewUri = webview.asWebviewUri(resourcePath);
+            return `${attr}="${webviewUri}"`;
+        });
+
+        return html;
+    } 
 }
