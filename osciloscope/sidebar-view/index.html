@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OsciloScope Sidebar</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="sbv">
+  <!-- SOURCE: 로그 파일 선택 -->
+  <div class="sbv-src">
+    <div class="lbl">SOURCE</div>
+    <div class="src-row" id="srcRow">
+      <span class="ico">&#9636;</span>
+      <span class="fn" id="srcName">로그 파일 선택</span>
+      <button class="src-btn" id="pickBtn" title="파일 선택">&#8943;</button>
+    </div>
+  </div>
+
+  <!-- TOOLS: 분석 도구 목록 (체크박스 UI만, 동작 없음) -->
+  <div class="sbv-tools">
+    <div class="lbl">TOOLS</div>
+    <div class="tool-list" id="toolList">
+      <div class="tool-empty" id="toolEmpty">불러오는 중…</div>
+    </div>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
