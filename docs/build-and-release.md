@@ -56,11 +56,22 @@ Extension Host 코드(`src/`)는 webpack으로 단일 `dist/extension.js`로 번
 
 ## GitFlow 자동화 (요약)
 
-이 저장소는 릴리스/핫픽스 파이프라인을 워크플로로 자동화한다.
+이 저장소는 릴리스/핫픽스 파이프라인을 워크플로로 자동화한다. 사람의 개입은
+**feature 리뷰**와 **"Finish Release" 버튼 한 번**뿐이고, 그 뒤는 무인으로 흐른다.
 
-- `cut-release.yml`: `feature/*` PR이 `develop`에 머지되면 PR 라벨(major/minor/patch)로
-  다음 버전을 계산해 `release/vX.Y.Z` 브랜치를 자동 생성(태그는 아직 없음).
-- `finalize.yml` / `merge-release.yml` / `post-merge.yml` / `pr-checklist.yml`:
-  "Finish release" 이후 태그 생성과 master/develop 머지, PR 체크리스트를 처리.
+1. **`cut-release.yml`** — `feature/*` PR이 `develop`에 머지되면 PR 라벨(major/minor/patch)로
+   다음 버전을 계산해 `release/vX.Y.Z` 브랜치를 자동 생성(태그는 아직 없음).
+2. **`finalize.yml`** — 수동 `workflow_dispatch`("Finish Release"). 브랜치 tip에
+   `vX.Y.Z` 태그를 찍고, `→master`·`→develop` PR 두 개를 App 토큰으로 연다
+   (그래야 CI가 트리거됨). 두 PR엔 auto-merge를 **폴백으로만** 걸어둔다.
+3. **`merge-release.yml`** — 실제 머지 담당. `CI`/`PR Gates` 워크플로가 green으로
+   끝나면(`workflow_run`) App이 두 PR을 **직접 머지**한다. `require-approval` 룰셋이
+   걸려 있어도 App은 bypass 액터라 통과한다 — GitHub 기본 auto-merge는 App의 bypass를
+   쓰지 못해 그대로 `REVIEW_REQUIRED`에 멈추므로, 직접 머지가 유일한 통로다.
+4. **`post-merge.yml`** — `→master`·`→develop` **둘 다** 머지된 뒤에만 GitHub Release를
+   생성하고(→ `publish.yml` → Open VSX) release/hotfix 브랜치를 삭제한다.
+5. **`pr-checklist.yml`** — `PR Gates` 메타데이터 체크(Verify PR Checklist / Version Label /
+   Serialize Guard). `CI`와 함께 필수 체크로 요구된다.
 
-> 세부 규칙은 워크플로 파일 상단 주석과 팀 위키의 GitFlow 파이프라인 문서를 정본으로 삼는다.
+> 세부 규칙(룰셋 bypass, 직렬화, 재시도 조건)은 각 워크플로 파일 상단 주석과
+> 지식 베이스의 `GitFlowPipeline.md`를 정본으로 삼는다.
