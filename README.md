@@ -8,7 +8,7 @@
 
 [![Version](https://img.shields.io/github/package-json/v/sdkurjnk/OsciloScope)](https://github.com/sdkurjnk/OsciloScope/releases)
 
-> 🌐 한국어: [`docs/README.ko.md`](docs/README.ko.md)
+> 🌐 한국어: [`docs/README.ko.md`](docs/README.ko.md) · Internal design docs: [`docs/`](docs/)
 
 A Visual Studio Code extension that reads variable monitoring logs and visualizes how variable values change over time.
 
