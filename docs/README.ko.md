@@ -6,7 +6,7 @@
   </picture>
 </p>
 
-[![Version](https://img.shields.io/github/package-json/v/sdkurjnk/OsciloScope)](https://open-vsx.org/extension/sdkurjnk/osciloscope)
+[![Open VSX](https://img.shields.io/open-vsx/v/sdkurjnk/osciloscope)](https://open-vsx.org/extension/sdkurjnk/osciloscope)
 
 변수 모니터링 로그를 읽어 변수 값이 시간에 따라 어떻게 변하는지 시각화하는 Visual Studio Code Extension입니다.
 

@@ -6,7 +6,7 @@
   </picture>
 </p>
 
-[![Version](https://img.shields.io/github/package-json/v/sdkurjnk/OsciloScope)](https://open-vsx.org/extension/sdkurjnk/osciloscope)
+[![Open VSX](https://img.shields.io/open-vsx/v/sdkurjnk/osciloscope)](https://open-vsx.org/extension/sdkurjnk/osciloscope)
 
 > 🌐 한국어: [`docs/README.ko.md`](docs/README.ko.md) · Internal design docs: [`docs/`](docs/)
 
