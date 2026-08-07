@@ -9,6 +9,8 @@ import { SidebarProvider } from './SidebarProvider';
 export function activate(context: vscode.ExtensionContext) {
     console.log('[ExtensionManager] OsciloScope Extension 시작!');
 
+    // 기존 커맨드 안에 있던 로직을 재사용 가능한 함수로 분리
+    // (사이드바에서 파일 선택했을 때도 동일한 로직을 타야 하므로)
     const loadLogFile = (logPath: string) => {
         if (!fs.existsSync(logPath)) {
             vscode.window.showErrorMessage(`OsciloScope: 로그 파일을 찾을 수 없습니다. (${logPath})`);
@@ -27,6 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     };
 
+    // 사이드바 웹뷰 프로바이더 등록
     const sidebarProvider = new SidebarProvider(context.extensionUri, (absolutePath) => {
         loadLogFile(absolutePath);
     });

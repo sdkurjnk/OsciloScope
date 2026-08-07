@@ -71,7 +71,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
 
     // osciloscope/sidebar-view/index.html을 읽어와서 css/js 상대경로를
-    // 웹뷰가 접근 가능한 URI로 치환
+    // 웹뷰가 접근 가능한 URI로 치환 (OsciloScopeWebviewPanel.ts와 동일한 방식)
     private getHtml(webview: vscode.Webview): string {
         const htmlPath = path.join(this.extensionUri.fsPath, 'osciloscope', 'sidebar-view', 'index.html');
         let html = fs.readFileSync(htmlPath, 'utf-8');
@@ -83,5 +83,5 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         });
 
         return html;
-    } 
+    }
 }
