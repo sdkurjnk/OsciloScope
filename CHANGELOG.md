@@ -3,6 +3,16 @@
 All notable changes to the "osciloscope" extension are documented here, following
 [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-08-07
+
+### Documentation
+- Rewrite README to match the current sidebar-based workflow (SOURCE picker + START),
+  with an interface screenshot and version badge pointing at the Open VSX listing.
+- Add internal design docs: Korean README, FE/BE API reference specs, and sequence
+  flows rendered as mermaid diagrams.
+- Update the GitFlow section to reflect the direct-merge CD pipeline.
+- Remove leftover generator boilerplate (quickstart doc).
+
 ## [0.1.1] - 2026-08-07
 
 ### Fixed
@@ -19,5 +29,6 @@ All notable changes to the "osciloscope" extension are documented here, followin
 - Per-step value timeline with change tags (`init`, numeric `+/-` deltas, `changed`,
   `deleted`) and a call-context header (function, call id, parent call, depth).
 
+[0.1.2]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.1.2
 [0.1.1]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.1.1
 [0.1.0]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.1.0
