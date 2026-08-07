@@ -60,36 +60,35 @@ sidebar-view/              사이드바 뷰 프론트 (메인 패널과 별도)
 
 파일 선택 단일 진입점은 사이드바 뷰다. 커맨드 팔레트 커맨드는 없다.
 
-```
-사용자: Activity Bar에서 OsciloScope 뷰 열기
-   │
-   ▼  [사이드바 웹뷰 로드]
-① js/main.js → GET_TOOLS_LIST 송신
-   ◀ TOOLS_LIST (tools/ 파일명) 받아 목록 렌더
-   │
-   ▼  사용자가 SOURCE의 파일 선택 버튼 클릭
-② SELECT_LOG_FILE ─▶ [Ext] SidebarProvider.selectLogFile()
-   → showOpenDialog로 .jsonl 선택 → 경로 저장
-   ◀ LOG_FILE_LOADED {fileName, filePath}  → 사이드바 행 갱신 + START 활성화
-   │
-   ▼  사용자가 START 클릭
-③ START_RENDER ─▶ [Ext] SidebarProvider.startRender()
-   → onLogFileSelected(선택경로) → extension.ts의 loadLogFile()
-   │
-   ▼  [Ext] loadLogFile(logPath)
-④ 파일 없으면 showErrorMessage 후 종료
-⑤ parseLogFile() → transformData()
-⑥ OsciloScopeWebviewPanel.createOrShow()  (패널 생성/재사용)
-⑦ 메인 패널로 LOG_FILE_LOADED(헤더 경로) + UPDATE_ALL_DATA 전송
-   │
-   ▼  [메인 패널]
-⑧ VisualizerApp.handleMessageFromBackend()
-   → DataManager.updateData() → SidebarManager.renderSidebar()
-   → (선택된 변수 있으면) TimelineViewer 렌더
-   │
-   ▼  사용자가 사이드바에서 변수 클릭
-⑨ VisualizerApp._onVarSelected(varKey)
-   → TimelineViewer 갱신 → VARIABLE_CHANGED 송신 (백엔드는 로깅만)
+```mermaid
+sequenceDiagram
+    actor U as 사용자
+    participant SB as 사이드바 뷰
+    participant EXT as Extension Host
+    participant MP as 메인 패널
+
+    U->>SB: Activity Bar에서 OsciloScope 뷰 열기
+    SB->>EXT: GET_TOOLS_LIST
+    EXT-->>SB: TOOLS_LIST (tools/ 파일명)
+
+    U->>SB: SOURCE 파일 선택 버튼 클릭
+    SB->>EXT: SELECT_LOG_FILE
+    Note over EXT: selectLogFile() → showOpenDialog로<br/>.jsonl 선택 → 경로 저장
+    EXT-->>SB: LOG_FILE_LOADED {fileName, filePath}
+    Note over SB: 사이드바 행 갱신 + START 활성화
+
+    U->>SB: START 클릭
+    SB->>EXT: START_RENDER
+    Note over EXT: startRender() → loadLogFile(logPath)<br/>parseLogFile() → transformData()
+    EXT->>MP: createOrShow (패널 생성/재사용)
+    MP-->>EXT: UI_READY
+    EXT->>MP: LOG_FILE_LOADED (헤더 경로)
+    EXT->>MP: UPDATE_ALL_DATA
+    Note over MP: handleMessageFromBackend() →<br/>renderSidebar (+선택 변수 있으면 타임라인)
+
+    U->>MP: 사이드바에서 변수 클릭
+    MP->>EXT: VARIABLE_CHANGED {varKey, varName}
+    Note over EXT: 현재는 로깅만
 ```
 
 > 메인 패널은 로드 완료 시 `UI_READY`를 보낸다. 그 전에 도착한 메시지(⑦)는 VS Code가

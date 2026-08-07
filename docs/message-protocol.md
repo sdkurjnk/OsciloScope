@@ -48,21 +48,27 @@ interface OsciloScopeMessage {
 
 ## 시퀀스 (사이드바 → 메인 패널)
 
-```
-[사이드바 뷰]                 [Extension Host]                 [메인 패널]
-   │  GET_TOOLS_LIST ────────────▶│
-   │◀──────────── TOOLS_LIST ─────│
-   │                              │
-   │  SELECT_LOG_FILE ───────────▶│  showOpenDialog
-   │◀──────── LOG_FILE_LOADED ────│  (파일명·START 활성화)
-   │                              │
-   │  START_RENDER ──────────────▶│  loadLogFile
-   │                              │  createOrShow ──────────────▶│  (패널 오픈)
-   │                              │◀──────────── UI_READY ───────│
-   │                              │  LOG_FILE_LOADED ───────────▶│  헤더 경로
-   │                              │  UPDATE_ALL_DATA ───────────▶│  renderSidebar
-   │                              │                              │
-   │                              │◀── VARIABLE_CHANGED {…} ─────│  변수 클릭
+```mermaid
+sequenceDiagram
+    participant SB as 사이드바 뷰
+    participant EXT as Extension Host
+    participant MP as 메인 패널
+
+    SB->>EXT: GET_TOOLS_LIST
+    EXT-->>SB: TOOLS_LIST
+
+    SB->>EXT: SELECT_LOG_FILE
+    Note over EXT: showOpenDialog
+    EXT-->>SB: LOG_FILE_LOADED (파일명·START 활성화)
+
+    SB->>EXT: START_RENDER
+    Note over EXT: loadLogFile
+    EXT->>MP: createOrShow (패널 오픈)
+    MP-->>EXT: UI_READY
+    EXT->>MP: LOG_FILE_LOADED (헤더 경로)
+    EXT->>MP: UPDATE_ALL_DATA (renderSidebar)
+
+    MP->>EXT: VARIABLE_CHANGED (변수 클릭)
 ```
 
 ## 브릿지 구현 위치
