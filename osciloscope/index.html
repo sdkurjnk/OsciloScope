@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VML Visualizer</title>
+<title>OsciloScope</title>
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/sidebar.css">
 <link rel="stylesheet" href="css/timeline.css">
@@ -11,12 +11,20 @@
 <body>
 
 <div class="hdr">
-  <div class="logo">VML<span>·</span>Visualizer</div>
+  <span class="path" id="hdrPath"><span class="none">로그 파일 미선택</span></span>
   <div class="badge waiting" id="badge">대기 중</div>
 </div>
 
 <div class="main">
   <div class="sb">
+    <!-- 브랜드 (워드마크) -->
+    <div class="sb-brand">
+      <div class="wm">
+        <div class="nm">OsciloScope</div>
+        <div class="tag">Variable Monitor</div>
+      </div>
+    </div>
+
     <div class="sb-hdr">VARIABLES</div>
     <div class="sb-list" id="sbList"></div>
   </div>
@@ -24,6 +32,7 @@
     <div class="tl-hdr" id="tlHdr" style="display:none">
       <span class="tl-name" id="tlName">—</span>
       <span class="tl-scope" id="tlScope">—</span>
+      <span class="tl-badges" id="tlBadges"></span>
       <span class="tl-cnt" id="tlCnt"></span>
     </div>
     <div class="tl-body" id="tlBody">

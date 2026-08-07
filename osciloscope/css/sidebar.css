@@ -59,3 +59,67 @@
 }
 .vi.active .vt { background: #1b3a4b; color: #4fc1ff; }
 .vn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── 호출 그룹 depth 뱃지 (변수 단위 속성 — 그룹 헤더에 한 번만) ── */
+.sg-depth {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #2a2a2a;
+  border: 1px solid #3c3c3c;
+  color: #858585;
+  flex-shrink: 0;
+}
+
+/* ── 2단 사이드바: 함수 그룹 / 호출 인스턴스 ── */
+.sg-cnt {
+  font-size: 10px;
+  color: #858585;
+  flex-shrink: 0;
+}
+.ci {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px 2px 22px;
+  margin-top: 2px;
+}
+.ci-id {
+  font-size: 10px;
+  font-weight: 500;
+  color: #4fc1ff;
+  background: rgba(4,57,94,.25);
+  border: 1px solid #1b4f72;
+  border-radius: 3px;
+  padding: 0 5px;
+}
+.vi-nested { padding-left: 34px; }
+
+/* ── 변수 행 call_id 칩 (같은 이름 변수의 호출 인스턴스 구분) ── */
+.vc {
+  margin-left: auto;
+  font-size: 9px;
+  color: #4fc1ff;
+  background: rgba(4,57,94,.25);
+  border: 1px solid #1b4f72;
+  border-radius: 3px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ── 로고 브랜드 블록 ── */
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border-bottom: 1px solid #3c3c3c;
+}
+.sb-brand .wm { line-height: 1.15; }
+.sb-brand .wm .nm {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4fc1ff;
+  letter-spacing: .04em;
+}
+.sb-brand .wm .tag { font-size: 9px; color: #858585; }
