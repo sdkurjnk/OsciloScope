@@ -106,3 +106,20 @@
   padding: 0 4px;
   flex-shrink: 0;
 }
+
+/* ── 로고 브랜드 블록 ── */
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border-bottom: 1px solid #3c3c3c;
+}
+.sb-brand .wm { line-height: 1.15; }
+.sb-brand .wm .nm {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4fc1ff;
+  letter-spacing: .04em;
+}
+.sb-brand .wm .tag { font-size: 9px; color: #858585; }

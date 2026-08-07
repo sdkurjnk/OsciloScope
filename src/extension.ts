@@ -4,39 +4,46 @@ import * as fs from 'fs';
 import { LogParser } from './LogParser';
 import { OsciloScopeWebviewPanel } from './OsciloScopeWebviewPanel';
 import { CommandTypes } from './OsciloScopeMessage';
+import { SidebarProvider } from './SidebarProvider';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('[ExtensionManager] OsciloScope Extension 시작!');
 
-    const command = vscode.commands.registerCommand('osciloscope.openVisualizer', () => {
-
-        // ① LogParser 생성
-        const logPath = path.join(context.extensionUri.fsPath, 'log.jsonl');
-
+    // 기존 커맨드 안에 있던 로직을 재사용 가능한 함수로 분리
+    // (사이드바에서 파일 선택했을 때도 동일한 로직을 타야 하므로)
+    const loadLogFile = (logPath: string) => {
         if (!fs.existsSync(logPath)) {
             vscode.window.showErrorMessage(`OsciloScope: 로그 파일을 찾을 수 없습니다. (${logPath})`);
             return;
         }
 
         const parser = new LogParser(logPath);
-
-        // ② 파일 읽기
         const rawLogs = parser.parseLogFile();
-
-        // ③ 데이터 변환
         const data = parser.transformData(rawLogs);
 
-        // ④ Webview 창 열기
         OsciloScopeWebviewPanel.createOrShow(context.extensionUri);
 
-        // ⑤ 프론트로 데이터 전송
+        // 메인 패널 헤더(#hdrPath)에 선택 파일 경로 표시.
+        // (UI_READY 전이면 sendDataToWebview가 버퍼링 후 flush)
+        OsciloScopeWebviewPanel.sendDataToWebview({
+            command: CommandTypes.LOG_FILE_LOADED,
+            payload: { fileName: path.basename(logPath), filePath: logPath }
+        });
+
         OsciloScopeWebviewPanel.sendDataToWebview({
             command: CommandTypes.UPDATE_ALL_DATA,
             payload: data
         });
+    };
+
+    // 사이드바 웹뷰 프로바이더 등록 (파일 선택 단일 진입점)
+    const sidebarProvider = new SidebarProvider(context.extensionUri, (absolutePath) => {
+        loadLogFile(absolutePath);
     });
 
-    context.subscriptions.push(command);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('osciloscope.sidebarView', sidebarProvider)
+    );
 }
 
 export function deactivate() {}

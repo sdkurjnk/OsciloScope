@@ -17,12 +17,24 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "osciloscope.openVisualizer",
-        "title": "OsciloScope: Open Visualizer"
-      }
-    ]
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "osciloscope-sidebar",
+          "title": "OsciloScope",
+          "icon": "assets/sidebar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "osciloscope-sidebar": [
+        {
+          "id": "osciloscope.sidebarView",
+          "name": "OsciloScope",
+          "type": "webview"
+        }
+      ]
+    }
   },
   "scripts": {
     "version:resolve": "node scripts/resolve-version.mjs",

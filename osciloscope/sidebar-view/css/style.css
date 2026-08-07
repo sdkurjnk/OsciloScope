@@ -1,0 +1,116 @@
+/* ── 사이드바 뷰 (VS Code Activity Bar 패널) ──
+   메인 패널(css/sidebar.css)과 달리 폭이 고정이 아니라 유동적이라
+   width 지정 대신 VS Code 테마 CSS 변수를 써서 자연스럽게 맞춤 */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--vscode-font-family, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  background: var(--vscode-sideBar-background, #252526);
+  color: var(--vscode-foreground, #cccccc);
+}
+
+.sbv { display: flex; flex-direction: column; }
+
+.sbv-src,
+.sbv-tools {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, #3c3c3c);
+}
+
+.lbl {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, #858585);
+  letter-spacing: .08em;
+  margin-bottom: 8px;
+}
+
+/* SOURCE row — 메인 패널 css/sidebar.css의 .src-row와 동일한 톤으로 맞춤 */
+.src-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--vscode-input-background, #1e1e1e);
+  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  border-radius: 4px;
+  padding: 0 8px;
+  height: 30px;
+}
+.src-row.set { border-color: #1b4f72; }
+.src-row .ico { color: #858585; font-size: 11px; flex-shrink: 0; }
+.src-row .fn {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: #6b6b6b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.src-row.set .fn { color: var(--vscode-foreground, #cccccc); }
+.src-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: 1px solid #3c3c3c;
+  background: #2d2d2d;
+  color: #cccccc;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.src-btn:hover { background: #37373d; border-color: #4a4a4a; }
+
+/* START: 선택한 로그 파일 렌더링 트리거 */
+.start-btn {
+  margin-top: 8px;
+  width: 100%;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  background: var(--vscode-button-background, #04395e);
+  color: var(--vscode-button-foreground, #ffffff);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  cursor: pointer;
+}
+.start-btn:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground, #0a4a75);
+}
+.start-btn:disabled { opacity: .45; cursor: default; }
+
+/* TOOLS: 체크박스 목록 (표시만, 선택 동작은 스코프 아님) */
+.tool-list { display: flex; flex-direction: column; gap: 2px; }
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tool-item input[type="checkbox"] {
+  accent-color: #4fc1ff;
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.tool-item .tn {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tool-empty {
+  font-size: 11px;
+  color: #6b6b6b;
+  padding: 2px;
+}

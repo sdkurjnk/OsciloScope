@@ -11,12 +11,20 @@
 <body>
 
 <div class="hdr">
-  <div class="logo">OsciloScope</div>
+  <span class="path" id="hdrPath"><span class="none">로그 파일 미선택</span></span>
   <div class="badge waiting" id="badge">대기 중</div>
 </div>
 
 <div class="main">
   <div class="sb">
+    <!-- 브랜드 (워드마크) -->
+    <div class="sb-brand">
+      <div class="wm">
+        <div class="nm">OsciloScope</div>
+        <div class="tag">Variable Monitor</div>
+      </div>
+    </div>
+
     <div class="sb-hdr">VARIABLES</div>
     <div class="sb-list" id="sbList"></div>
   </div>
