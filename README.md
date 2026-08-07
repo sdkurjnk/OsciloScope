@@ -10,39 +10,30 @@
 
 > 🌐 한국어: [`docs/README.ko.md`](docs/README.ko.md) · Internal design docs: [`docs/`](docs/)
 
-OsciloScope is a Visual Studio Code extension that visualizes how variable values change over
-time. It reads the `.jsonl` monitoring logs produced by
-[oscilo](https://github.com/sdkurjnk/oscilo) and turns each variable's history into an
-interactive timeline — you instrument nothing in VS Code, you just open the log.
+OsciloScope visualizes how variable values change over time. It reads the `.jsonl` logs produced
+by [oscilo](https://github.com/sdkurjnk/oscilo) and renders each variable's history as an
+interactive timeline.
 
 ## Features
 
-- **Reads any oscilo log.** Pick a `.jsonl` file from the sidebar — no fixed path or filename.
-- **Scope grouping.** Variables are grouped by scope (Local / Global). Names reused across
-  recursive or repeated calls are kept apart by their owning call frame, so each instance
-  stays distinct.
-- **Value timeline.** For the selected variable, every step shows its value, source line, and a
-  change tag — `init`, numeric `+/-` deltas, `changed`, or `deleted`.
-- **Call context at a glance.** The timeline header surfaces the function, call id, parent call,
-  and depth behind each variable.
+- **Any log.** Pick a `.jsonl` file from the sidebar.
+- **Scope grouping.** Variables split by scope (Local / Global), with recursive or repeated calls kept distinct.
+- **Value timeline.** Per-step value, source line, and change tag (`init`, `+/-`, `changed`, `deleted`).
+- **Call context.** Function, call id, parent, and depth in the header.
 
 ## Usage
 
 1. Open the **OsciloScope** view from the Activity Bar.
-2. Under **SOURCE**, pick a `.jsonl` log file produced by oscilo.
-3. Click **START** to render the value timeline in the main panel.
-4. Select a variable in the left list to see its per-step history.
+2. Pick a `.jsonl` log under **SOURCE**.
+3. Click **START** to render the timeline.
+4. Select a variable to see its history.
 
 ## Requirements
 
 - VS Code `^1.120.0` or later.
 - A `.jsonl` log produced by [oscilo](https://github.com/sdkurjnk/oscilo).
 
-## Documentation
+## More
 
-Design docs — architecture, data model, message protocol, and FE/BE API references — live in
-[`docs/`](docs/).
-
-## Release Notes
-
-See [`CHANGELOG.md`](CHANGELOG.md) for release history.
+- Design docs: [`docs/`](docs/)
+- Release history: [`CHANGELOG.md`](CHANGELOG.md)
