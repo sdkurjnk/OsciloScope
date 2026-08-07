@@ -16,10 +16,9 @@
 
 [English](../README.md) | **한국어**
 
-OsciloScope는 [oscilo](https://github.com/sdkurjnk/oscilo)가 남긴 `.jsonl` 모니터링 로그를 읽어
-각 변수의 이력을 인터랙티브 타임라인으로 보여줍니다. 둘은 짝입니다 — oscilo가 파이썬 변수의 변화를
-기록하면, OsciloScope가 그것을 스코프별로 묶고, 재귀 호출에서도 인스턴스를 구분하고, 스텝마다
-변화 태그를 달아 보여줍니다.
+OsciloScope는 [oscilo](https://github.com/sdkurjnk/oscilo)가 남긴 `.jsonl` 로그를 읽어 각 변수의
+이력을 인터랙티브 타임라인으로 보여줍니다 — 스코프별로 묶고, 재귀 호출에서도 인스턴스를 구분하며,
+스텝마다 변화 태그를 답니다.
 
 ## 목차
 
@@ -35,15 +34,14 @@ OsciloScope는 [oscilo](https://github.com/sdkurjnk/oscilo)가 남긴 `.jsonl` �
 
 ## 개요
 
-모니터링 로그는 변화 이벤트의 평면 스트림입니다 — 한 줄에 JSON 하나라 그대로 읽기는 어렵습니다:
+모니터링 로그는 변화마다 JSON 한 줄이 쌓인 평면 스트림입니다:
 
 ```json
 {"name":"acc","var_id":47,"data":0,"event":"init","domain":"LOCAL","line":12,"func":"process","call_id":47}
 {"name":"acc","var_id":47,"data":1,"event":"updated","domain":"LOCAL","line":14,"func":"process","call_id":47}
 ```
 
-OsciloScope는 이 스트림을 변수별 타임라인으로 접어, 어떤 변수가 어떤 스코프에 있고 값이 스텝마다
-어떻게 움직였는지 한눈에 보게 합니다.
+OsciloScope는 이걸 변수별 타임라인으로 접습니다: 어떤 변수가 어떤 스코프에 있고, 값이 어떻게 움직였는지.
 
 ## 설치
 
@@ -97,13 +95,10 @@ OsciloScope는 이 스트림을 변수별 타임라인으로 접어, 어떤 변�
 
 ## 동작 방식
 
-OsciloScope는 VS Code의 프로세스 분리를 그대로 따라 두 부분으로 나뉩니다:
-
-- 로그를 읽고 파싱해 변수를 정체성별로 묶는 **Extension Host** 측,
-- 사이드바와 타임라인을 그리는 **Webview** 측.
-
-둘은 오직 `postMessage`로만 통신합니다. 변수 정체성은 oscilo의 `var_id`로 키잉하므로, 재귀 호출에서
-같은 이름이 나와도 서로 분리됩니다. 자세한 내용은 [설계 문서](./)에 있습니다.
+VS Code의 프로세스 분리를 따라 두 부분으로 나뉩니다 — 로그를 파싱해 변수를 정체성별로 묶는
+**Extension Host**, 사이드바와 타임라인을 그리는 **Webview**. 둘은 `postMessage`로만 통신하고,
+정체성은 oscilo의 `var_id`로 키잉하므로 재귀 호출에서 같은 이름이 나와도 분리됩니다. 자세한 내용은
+[설계 문서](./)에 있습니다.
 
 ## 요구 사항
 

@@ -16,10 +16,9 @@
 
 **English** | [한국어](docs/README.ko.md)
 
-OsciloScope reads the `.jsonl` monitoring logs produced by [oscilo](https://github.com/sdkurjnk/oscilo)
-and renders each variable's history as an interactive timeline. It is the viewer half of the pair:
-oscilo records how your Python variables change; OsciloScope shows it — grouped by scope, kept distinct
-across recursive calls, and annotated with a per-step change tag.
+OsciloScope reads the `.jsonl` logs produced by [oscilo](https://github.com/sdkurjnk/oscilo) and
+renders each variable's history as an interactive timeline — grouped by scope, kept distinct across
+recursive calls, and tagged per step.
 
 ## Contents
 
@@ -35,15 +34,15 @@ across recursive calls, and annotated with a per-step change tag.
 
 ## Overview
 
-A monitoring log is a flat stream of variable events — one JSON object per change, hard to read directly:
+A monitoring log is a flat stream of one JSON object per change:
 
 ```json
 {"name":"acc","var_id":47,"data":0,"event":"init","domain":"LOCAL","line":12,"func":"process","call_id":47}
 {"name":"acc","var_id":47,"data":1,"event":"updated","domain":"LOCAL","line":14,"func":"process","call_id":47}
 ```
 
-OsciloScope folds that stream into a per-variable timeline you can scan at a glance: which variables
-exist, in what scope, and how each value moved step by step.
+OsciloScope folds it into a per-variable timeline: which variables exist, in what scope, and how each
+value moved.
 
 ## Installation
 
@@ -97,13 +96,10 @@ Change tags:
 
 ## How it works
 
-OsciloScope mirrors VS Code's process split into two coordinated pieces:
-
-- an **Extension Host** side that reads the log, parses it, and groups variables by identity;
-- a **Webview** side that renders the sidebar and the timeline.
-
-The two communicate only over `postMessage`. Variable identity is keyed on oscilo's `var_id`, so the
-same name across recursive calls stays separate. Full details are in the [design docs](docs/).
+Following VS Code's process split, OsciloScope has two parts: an **Extension Host** that parses the log
+and groups variables by identity, and a **Webview** that renders the sidebar and timeline. They talk
+only over `postMessage`, and identity is keyed on oscilo's `var_id` so a name reused across recursive
+calls stays separate. See the [design docs](docs/).
 
 ## Requirements
 
