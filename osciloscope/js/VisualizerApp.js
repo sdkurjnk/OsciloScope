@@ -29,6 +29,11 @@ class VisualizerApp {
       if (this._dataManager.currentVarKey)
         this._renderTimeline(this._dataManager.currentVarKey);
     }
+    if (message.command === CommandTypes.LOG_FILE_LOADED) {
+      const { filePath } = message.payload || {};
+      const hdrPath = document.getElementById('hdrPath');
+      if (hdrPath && filePath) hdrPath.textContent = filePath;
+    }
   }
 
   /** 프론트 → 백엔드 발신 */

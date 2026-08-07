@@ -17,12 +17,6 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "osciloscope.openVisualizer",
-        "title": "OsciloScope: Open Visualizer"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {

@@ -4,12 +4,18 @@
   const srcRow = document.getElementById('srcRow');
   const srcName = document.getElementById('srcName');
   const pickBtn = document.getElementById('pickBtn');
+  const startBtn = document.getElementById('startBtn');
   const toolList = document.getElementById('toolList');
   const toolEmpty = document.getElementById('toolEmpty');
 
   // SOURCE: 파일 선택 요청 (OsciloScopeMessage.ts의 CommandTypes.SELECT_LOG_FILE)
   pickBtn.addEventListener('click', () => {
     vscode.postMessage({ command: 'SELECT_LOG_FILE', payload: {} });
+  });
+
+  // START: 선택된 로그 파일로 메인 패널 렌더링 시작 (CommandTypes.START_RENDER)
+  startBtn.addEventListener('click', () => {
+    vscode.postMessage({ command: 'START_RENDER', payload: {} });
   });
 
   // TOOLS: 사이드바 로드 시 목록 요청 (CommandTypes.GET_TOOLS_LIST)
@@ -22,6 +28,7 @@
       // payload: { fileName, filePath }
       srcName.textContent = payload.fileName;
       srcRow.classList.add('set');
+      startBtn.disabled = false;  // 파일이 선택되면 START 활성화
     }
 
     if (command === 'TOOLS_LIST') {

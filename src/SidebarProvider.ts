@@ -7,6 +7,7 @@ import { ToolsProvider } from './ToolsProvider';
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
     private view?: vscode.WebviewView;
+    private selectedLogPath?: string;
 
     constructor(
         private readonly extensionUri: vscode.Uri,
@@ -30,6 +31,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 case CommandTypes.SELECT_LOG_FILE:
                     this.selectLogFile();
                     break;
+                case CommandTypes.START_RENDER:
+                    this.startRender();
+                    break;
                 case CommandTypes.GET_TOOLS_LIST:
                     this.sendToolsList();
                     break;
@@ -48,14 +52,22 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             return;
         }
 
-        const absolutePath = uris[0].fsPath;
+        // 파일 선택은 경로 저장 + 사이드바 행 갱신까지만. 실제 렌더링은 START 버튼에서.
+        this.selectedLogPath = uris[0].fsPath;
 
         this.postMessage({
             command: CommandTypes.LOG_FILE_LOADED,
-            payload: { fileName: uris[0].path.split('/').pop(), filePath: absolutePath }
+            payload: { fileName: uris[0].path.split('/').pop(), filePath: this.selectedLogPath }
         });
+    }
 
-        this.onLogFileSelected(absolutePath);
+    // START 버튼: 선택된 로그 파일로 메인 패널 렌더링 (창을 닫았어도 다시 열림)
+    private startRender(): void {
+        if (!this.selectedLogPath) {
+            vscode.window.showWarningMessage('OsciloScope: 먼저 로그 파일을 선택하세요.');
+            return;
+        }
+        this.onLogFileSelected(this.selectedLogPath);
     }
 
     private sendToolsList(): void {

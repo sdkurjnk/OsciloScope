@@ -23,13 +23,20 @@ export function activate(context: vscode.ExtensionContext) {
 
         OsciloScopeWebviewPanel.createOrShow(context.extensionUri);
 
+        // 메인 패널 헤더(#hdrPath)에 선택 파일 경로 표시.
+        // (UI_READY 전이면 sendDataToWebview가 버퍼링 후 flush)
+        OsciloScopeWebviewPanel.sendDataToWebview({
+            command: CommandTypes.LOG_FILE_LOADED,
+            payload: { fileName: path.basename(logPath), filePath: logPath }
+        });
+
         OsciloScopeWebviewPanel.sendDataToWebview({
             command: CommandTypes.UPDATE_ALL_DATA,
             payload: data
         });
     };
 
-    // 사이드바 웹뷰 프로바이더 등록
+    // 사이드바 웹뷰 프로바이더 등록 (파일 선택 단일 진입점)
     const sidebarProvider = new SidebarProvider(context.extensionUri, (absolutePath) => {
         loadLogFile(absolutePath);
     });
@@ -37,13 +44,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider('osciloscope.sidebarView', sidebarProvider)
     );
-
-    const command = vscode.commands.registerCommand('osciloscope.openVisualizer', () => {
-        const defaultLogPath = path.join(context.extensionUri.fsPath, 'log.jsonl');
-        loadLogFile(defaultLogPath);
-    });
-
-    context.subscriptions.push(command);
 }
 
 export function deactivate() {}
