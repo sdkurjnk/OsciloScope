@@ -4,6 +4,7 @@
   "publisher": "sdkurjnk",
   "description": "OsciloScope Variable Monitoring Logger Visualizer",
   "version": "0.0.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/sdkurjnk/OsciloScope.git"
