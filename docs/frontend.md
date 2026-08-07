@@ -1,7 +1,9 @@
 # 프론트엔드 (Webview)
 
-Webview UI는 번들러 없는 **순수 JS/HTML/CSS**다. `index.html`이 스크립트를 순서대로
-로드하고 전역 클래스로 노출하며, `main.js`가 앱을 부팅한다.
+Webview UI는 번들러 없는 순수 JS/HTML/CSS다. 웹뷰는 둘인데(사이드바 뷰 + 메인 패널),
+이 문서의 앞부분은 **메인 패널**(`osciloscope/`)을 다루고, 사이드바 뷰는 맨 아래에서 따로 설명한다.
+
+메인 패널은 `index.html`이 스크립트를 순서대로 로드해 전역 클래스로 노출하고, `main.js`가 앱을 부팅한다.
 
 ## 스크립트 로드 순서 (중요)
 
@@ -24,7 +26,7 @@ main.js             →  new VisualizerApp().init()
 - `acquireVsCodeApi()` 존재 여부로 VS Code / 브라우저 환경을 판별한다.
 - `init()`: `message` 리스너 등록 → 상태 뱃지 "로드 중" → `UI_READY` 송신.
 - `handleMessageFromBackend()`: `UPDATE_ALL_DATA` 수신 시 데이터 갱신 + 사이드바 재렌더 +
-  이미 선택된 변수가 있으면 타임라인도 재렌더.
+  이미 선택된 변수가 있으면 타임라인도 재렌더. `LOG_FILE_LOADED` 수신 시 헤더 경로(`#hdrPath`) 표시.
 - `_onVarSelected(varKey)`: 선택 변수 저장 → 타임라인 렌더 → `VARIABLE_CHANGED` 송신.
 
 ### DataManager — 데이터 보관/조회
@@ -60,11 +62,26 @@ main.js             →  new VisualizerApp().init()
 - payload 형식은 백엔드 `transformData` 출력과 동일 스키마를 따라야 한다
   (재귀로 같은 이름 변수가 `call_id`별로 분리되는 케이스 포함).
 
-## DOM 앵커 (`index.html`)
+## DOM 앵커 (메인 패널 `index.html`)
 
 | id | 용도 |
 | --- | --- |
+| `hdrPath` | 헤더의 로드된 로그 파일 경로 (미선택 시 "로그 파일 미선택") |
 | `badge` | 연결 상태 뱃지 (대기 중 / 로드 중 / 연결됨) |
 | `sbList` | 사이드바 변수 목록 컨테이너 |
 | `tlHdr` · `tlName` · `tlScope` · `tlBadges` · `tlCnt` | 타임라인 헤더/메타/카운트 |
 | `tlBody` | 타임라인 본문(스텝 행 또는 빈 상태) |
+
+## 사이드바 뷰 (`osciloscope/sidebar-view/`)
+
+Activity Bar에 상주하는 진입점 웹뷰. 메인 패널과 완전히 별개다 — 공유 클래스도 상수 파일도 없다.
+`js/main.js`는 단일 IIFE로, `CommandTypes` 대신 문자열 커맨드를 직접 쓴다.
+
+- **SOURCE**: 파일 선택 버튼 → `SELECT_LOG_FILE` 송신. `LOG_FILE_LOADED` 수신 시 파일명 표시 +
+  START 버튼 활성화.
+- **START**: `START_RENDER` 송신 → 백엔드가 메인 패널을 렌더.
+- **TOOLS**: 로드 시 `GET_TOOLS_LIST` 송신, `TOOLS_LIST` 수신 시 체크박스 목록 렌더.
+  체크박스는 표시용이고 동작은 없다.
+
+DOM 앵커: `srcRow`·`srcName`(선택 파일 행), `pickBtn`(선택)·`startBtn`(렌더),
+`toolList`·`toolEmpty`(도구 목록).

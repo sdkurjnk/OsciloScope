@@ -38,11 +38,11 @@ oscilo가 출력하는 한 줄 = 하나의 변수 이벤트. 필드는 OsciloSco
 - **`call_id` 계층**(`call_id`/`parent_call_id`/`call_depth`)으로 호출 트리를 재구성할 수 있다.
   현재 OsciloScope는 이를 사이드바 칩·헤더 뱃지로만 노출하지만, 향후 함수/호출별 그룹핑의 근거다.
 
-## 파일명 유의
+## 파일 선택
 
-- oscilo 문서는 산출물을 **`oscilo.jsonl`**로 소개하지만, OsciloScope는 확장 루트의
-  **`log.jsonl`** 고정 경로를 읽는다(`src/extension.ts`). 현재는 사용자가 파일을 그 이름/위치로
-  두어야 한다. 임의 파일 선택은 `feature/sideBar_fileSelection` 브랜치에서 진행 중.
+- oscilo 문서는 산출물을 `oscilo.jsonl`로 소개하지만, OsciloScope는 파일명·위치를 가리지 않는다.
+  사이드바 SOURCE에서 `.jsonl`을 직접 고르고(→ `showOpenDialog`) START로 렌더한다. 선택 경로는
+  `SidebarProvider`가 들고 있다가 렌더 시 백엔드로 넘긴다(`src/extension.ts`의 `loadLogFile`).
 
 ## 하위 호환 규약
 

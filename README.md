@@ -20,8 +20,9 @@ A Visual Studio Code extension that reads variable monitoring logs and visualize
 
 ## Usage
 
-1. Place a `log.jsonl` file in the extension root.
-2. Run **`OsciloScope: Open Visualizer`** from the Command Palette (`Ctrl+Shift+P`).
+1. Open the **OsciloScope** view from the Activity Bar.
+2. Under **SOURCE**, pick a `.jsonl` log file.
+3. Click **START** to render the value timeline in the main panel.
 
 ## Requirements
 

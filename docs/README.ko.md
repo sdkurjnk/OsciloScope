@@ -20,8 +20,9 @@
 
 ## 사용법
 
-1. 확장 루트에 `log.jsonl` 파일을 둡니다.
-2. 명령 팔레트(`Ctrl+Shift+P`)에서 **`OsciloScope: Open Visualizer`**를 실행합니다.
+1. 활동 표시줄에서 **OsciloScope** 뷰를 엽니다.
+2. **SOURCE**에서 `.jsonl` 로그 파일을 선택합니다.
+3. **START**를 누르면 메인 패널에 값 타임라인이 렌더링됩니다.
 
 ## 요구 사항
 

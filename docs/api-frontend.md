@@ -1,22 +1,29 @@
 # API 명세: Frontend (Webview)
 
 `osciloscope/`의 순수 JS/HTML/CSS로 된 Webview UI의 공개 API.
-번들러도 모듈 시스템도 없어서 각 클래스는 전역으로 노출되고, `index.html`의 로드 순서가 곧 의존성이다.
+웹뷰는 둘이다 — **메인 패널**(`osciloscope/`, 전역 클래스 기반)과 **사이드바 뷰**(`osciloscope/sidebar-view/`, 단일 IIFE).
+번들러·모듈 시스템이 없어 메인 패널의 각 클래스는 전역으로 노출되고, `index.html`의 로드 순서가 곧 의존성이다.
 
 관련 문서: [frontend.md](./frontend.md)(구성·로드 순서) · [message-protocol.md](./message-protocol.md)(백엔드 통신).
 시그니처는 JS라 정적 타입이 없고, `_` 접두 멤버는 내부용이다.
 
-## `constants.js`
+## `constants.js` (메인 패널)
 
 ```js
 const CommandTypes = Object.freeze({
   UPDATE_ALL_DATA:  'UPDATE_ALL_DATA',  // 백엔드 → 프론트
   UI_READY:         'UI_READY',         // 프론트 → 백엔드
   VARIABLE_CHANGED: 'VARIABLE_CHANGED', // 프론트 → 백엔드
+  SELECT_LOG_FILE:  'SELECT_LOG_FILE',  // 프론트 → 백엔드
+  LOG_FILE_LOADED:  'LOG_FILE_LOADED',  // 백엔드 → 프론트 { fileName, filePath }
+  GET_TOOLS_LIST:   'GET_TOOLS_LIST',   // 프론트 → 백엔드
+  TOOLS_LIST:       'TOOLS_LIST',       // 백엔드 → 프론트 { tools: string[] }
 });
 ```
 
-백엔드 `src/OsciloScopeMessage.ts`의 `CommandTypes`와 문자열 값이 같아야 통신이 된다.
+백엔드 `src/OsciloScopeMessage.ts`의 `CommandTypes`(정본)와 문자열 값이 같아야 한다.
+정본에 있는 `START_RENDER`는 사이드바 전용이라 여기엔 없다. 사이드바 뷰는 이 파일을 불러오지 않고
+문자열 리터럴을 직접 쓴다.
 
 ## `VisualizerApp` (`js/VisualizerApp.js`)
 
@@ -26,7 +33,7 @@ const CommandTypes = Object.freeze({
 | --- | --- | --- |
 | `constructor` | `()` | `DataManager`/`SidebarManager`/`TimelineViewer` 생성. `SidebarManager`엔 `onSelectVar` 콜백을 넘긴다. `acquireVsCodeApi`가 있으면 `_vscode`에, 없으면(브라우저) `null` |
 | `init` | `(): void` | `message` 리스너 등록 → 뱃지 "로드 중" → `UI_READY` 송신 |
-| `handleMessageFromBackend` | `(message): void` | `UPDATE_ALL_DATA` 수신 시 데이터 갱신 + 사이드바 재렌더 + 뱃지 "연결됨". 선택된 변수가 있으면 타임라인도 다시 그린다 |
+| `handleMessageFromBackend` | `(message): void` | `UPDATE_ALL_DATA` 시 데이터 갱신 + 사이드바 재렌더 + 뱃지 "연결됨"(선택 변수 있으면 타임라인도). `LOG_FILE_LOADED` 시 헤더 경로(`#hdrPath`)에 `filePath` 표시 |
 | `sendMessageToBackend` | `(message): void` | VS Code면 `_vscode.postMessage`, 브라우저면 콘솔 출력 |
 | `_onVarSelected` *(private)* | `(varKey): void` | 선택 변수 저장 → 타임라인 렌더 → `VARIABLE_CHANGED {varKey, varName}` 송신 |
 | `_renderTimeline` *(private)* | `(varKey): void` | `getVarByKey`로 조회해 헤더+타임라인 렌더. 못 찾으면 `clearTimeline` |
@@ -50,7 +57,7 @@ const CommandTypes = Object.freeze({
 
 ## `SidebarManager` (`js/SidebarManager.js`)
 
-스코프 그룹(Global/Local)을 그린다.
+메인 패널의 스코프 그룹(Global/Local)을 그린다.
 
 | 멤버 | 시그니처 | 설명 |
 | --- | --- | --- |
@@ -90,5 +97,14 @@ const CommandTypes = Object.freeze({
 const app = new VisualizerApp();
 app.init();
 ```
+
+## 사이드바 뷰 (`sidebar-view/js/main.js`)
+
+메인 패널과 별개인 단일 IIFE. 클래스도 공유 상수도 없이 `acquireVsCodeApi()`로 직접 통신한다.
+
+- 로드 시 `GET_TOOLS_LIST`를 보낸다.
+- `pickBtn` 클릭 → `SELECT_LOG_FILE`, `startBtn` 클릭 → `START_RENDER` 송신.
+- `message` 수신: `LOG_FILE_LOADED` → 파일명 표시 + START 활성화, `TOOLS_LIST` → `renderTools`.
+- `renderTools(tools: string[])`: 도구별 체크박스 행 생성. 비면 "표시할 도구가 없습니다"(체크박스는 동작 없음).
 
 로드 순서와 DOM 앵커 표는 [frontend.md](./frontend.md)에 있다.
