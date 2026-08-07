@@ -75,6 +75,10 @@ Install from the [Open VSX Registry](https://open-vsx.org/extension/sdkurjnk/osc
 
 ## The interface
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sdkurjnk/OsciloScope/master/docs/assets/OsciloScope-test.png" alt="OsciloScope timeline view" width="100%">
+</p>
+
 | Area | What it shows |
 | --- | --- |
 | **SOURCE** (sidebar) | Pick a `.jsonl` log and **START** rendering |

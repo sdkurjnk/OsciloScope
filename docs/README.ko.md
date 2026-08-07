@@ -75,6 +75,10 @@ OsciloScope는 이 스트림을 변수별 타임라인으로 접어, 어떤 변�
 
 ## 화면 구성
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sdkurjnk/OsciloScope/master/docs/assets/OsciloScope-test.png" alt="OsciloScope 타임라인 화면" width="100%">
+</p>
+
 | 영역 | 표시 내용 |
 | --- | --- |
 | **SOURCE**(사이드바) | `.jsonl` 로그 선택 후 **START**로 렌더링 |
