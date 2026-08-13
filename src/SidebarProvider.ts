@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
 import { ToolRegistry } from './tool/ToolRegistry';
 import { ToolTemplate } from './tool/ToolTemplate';
+import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
 import { CopyToolPayload, OpenToolPayload, SelectToolPayload, StartRenderPayload } from './tool/types';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
@@ -24,9 +25,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [
-                vscode.Uri.joinPath(this.extensionUri, 'osciloscope')
-            ]
+            localResourceRoots: webviewResourceRoots(this.extensionUri)
         };
 
         webviewView.webview.html = this.getHtml(webviewView.webview);
@@ -145,6 +144,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             return `${attr}="${webviewUri}"`;
         });
 
-        return html;
+        return injectCspSource(html, webview);
     }
 }

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
+import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
 
 export class OsciloScopeWebviewPanel {
 
@@ -28,9 +29,7 @@ export class OsciloScopeWebviewPanel {
         vscode.ViewColumn.One,
         {
             enableScripts: true,
-            localResourceRoots: [
-                vscode.Uri.joinPath(extensionUri, 'osciloscope')
-            ]
+            localResourceRoots: webviewResourceRoots(extensionUri)
         }
     );
 
@@ -45,7 +44,7 @@ export class OsciloScopeWebviewPanel {
         return `${attr}="${webviewUri}"`;
     });
 
-    webview.html = html;
+    webview.html = injectCspSource(html, webview);
 
     OsciloScopeWebviewPanel.panel.onDidDispose(() => {
         OsciloScopeWebviewPanel.panel = undefined as any;
