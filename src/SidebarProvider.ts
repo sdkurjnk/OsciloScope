@@ -3,7 +3,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
 import { ToolRegistry } from './tool/ToolRegistry';
-import { SelectToolPayload, StartRenderPayload } from './tool/types';
+import { ToolTemplate } from './tool/ToolTemplate';
+import { CopyToolPayload, OpenToolPayload, SelectToolPayload, StartRenderPayload } from './tool/types';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
@@ -14,6 +15,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     constructor(
         private readonly extensionUri: vscode.Uri,
         private readonly registry: ToolRegistry,
+        private readonly template: ToolTemplate,
         private readonly onLogFileSelected: (absolutePath: string) => void
     ) {}
 
@@ -42,6 +44,15 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     break;
                 case CommandTypes.SELECT_TOOL:
                     this.selectedToolId = (message.payload as SelectToolPayload).toolId;
+                    break;
+                case CommandTypes.CREATE_TOOL:
+                    this.createTool();
+                    break;
+                case CommandTypes.COPY_TOOL:
+                    this.copyTool((message.payload as CopyToolPayload).toolId);
+                    break;
+                case CommandTypes.OPEN_TOOL:
+                    this.template.openTool((message.payload as OpenToolPayload).toolId);
                     break;
             }
         });
@@ -89,6 +100,24 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             command: CommandTypes.TOOLS_LIST,
             payload: this.registry.toPayload(this.view.webview)
         });
+    }
+
+    // 생성·복사 결과는 TOOL_CREATED로 알린다. 목록 갱신은 파일 감시가 알아서 처리하므로
+    // 여기서 따로 보내지 않는다 (사이드바는 TOOLS_CHANGED를 받고 다시 요청한다).
+    private async createTool(): Promise<void> {
+        const created = await this.template.createTool();
+        if (created) {
+            this.selectedToolId = created.toolId;
+            this.postMessage({ command: CommandTypes.TOOL_CREATED, payload: created });
+        }
+    }
+
+    private async copyTool(toolId: string): Promise<void> {
+        const created = await this.template.copyTool(toolId);
+        if (created) {
+            this.selectedToolId = created.toolId;
+            this.postMessage({ command: CommandTypes.TOOL_CREATED, payload: created });
+        }
     }
 
     // 파일 감시 알림. 사이드바가 받으면 GET_TOOLS_LIST로 목록을 다시 요청한다.

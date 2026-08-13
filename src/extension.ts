@@ -6,6 +6,7 @@ import { OsciloScopeWebviewPanel } from './OsciloScopeWebviewPanel';
 import { CommandTypes } from './OsciloScopeMessage';
 import { SidebarProvider } from './SidebarProvider';
 import { ToolRegistry } from './tool/ToolRegistry';
+import { ToolTemplate } from './tool/ToolTemplate';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('[ExtensionManager] OsciloScope Extension 시작!');
@@ -37,19 +38,26 @@ export function activate(context: vscode.ExtensionContext) {
         });
     };
 
+    const output = vscode.window.createOutputChannel('OsciloScope');
+
     // 도구 파일 탐색·감시. 확장은 도구 코드를 실행하지 않고 파일 정보만 다룬다.
     const toolRegistry = new ToolRegistry(context.extensionUri);
+    const toolTemplate = new ToolTemplate(context.extensionUri, toolRegistry, output);
 
     // 사이드바 웹뷰 프로바이더 등록 (파일 선택 단일 진입점)
-    const sidebarProvider = new SidebarProvider(context.extensionUri, toolRegistry, (absolutePath) => {
-        loadLogFile(absolutePath);
-    });
+    const sidebarProvider = new SidebarProvider(
+        context.extensionUri,
+        toolRegistry,
+        toolTemplate,
+        (absolutePath) => { loadLogFile(absolutePath); }
+    );
 
     // 도구 파일이 바뀌면 사이드바가 목록을 다시 받게 한다.
     // 이게 없으면 사용자가 파일을 만들어도 사이드바를 다시 열기 전까지 나타나지 않는다.
     toolRegistry.watch(() => sidebarProvider.notifyToolsChanged());
 
     context.subscriptions.push(
+        output,
         toolRegistry,
         vscode.window.registerWebviewViewProvider('osciloscope.sidebarView', sidebarProvider)
     );
