@@ -19,6 +19,10 @@ export const TOOL_TYPES_FILE    = 'osciloscope-tool.d.ts';
 export const TOOL_TYPES_VERSION = '0.2.0';
 export const TOOL_TYPES_STAMP   = /^\/\/ @osciloscope-types\s+(\S+)/;
 
+// 도구를 고르지 않았을 때 실행되는 번들 도구.
+// 기존 transformData + 고정 화면을 그대로 옮긴 것이라 동작이 지금과 같다 (설계문서 §8).
+export const DEFAULT_TOOL_ID = 'change-detector';
+
 export type ToolSource = 'builtin' | 'user';
 
 // TOOLS_LIST의 항목. 확장은 도구를 실행할 수 없으므로 파일 정보만 담는다.

@@ -17,7 +17,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         private readonly extensionUri: vscode.Uri,
         private readonly registry: ToolRegistry,
         private readonly template: ToolTemplate,
-        private readonly onLogFileSelected: (absolutePath: string) => void
+        private readonly onLogFileSelected: (absolutePath: string, toolId?: string) => void
     ) {}
 
     public resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -87,7 +87,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         if (payload?.toolId) {
             this.selectedToolId = payload.toolId;
         }
-        this.onLogFileSelected(this.selectedLogPath);
+        this.onLogFileSelected(this.selectedLogPath, this.selectedToolId);
     }
 
     // 확장은 파일 시스템 스캔만 한다. 도구의 name/version은 사이드바가 import해서 채운다.
@@ -122,10 +122,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     // 파일 감시 알림. 사이드바가 받으면 GET_TOOLS_LIST로 목록을 다시 요청한다.
     public notifyToolsChanged(): void {
         this.postMessage({ command: CommandTypes.TOOLS_CHANGED, payload: {} });
-    }
-
-    public getSelectedToolId(): string | undefined {
-        return this.selectedToolId;
     }
 
     private postMessage(message: OsciloScopeMessage): void {

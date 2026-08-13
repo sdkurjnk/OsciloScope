@@ -55,6 +55,12 @@ export class OsciloScopeWebviewPanel {
     OsciloScopeWebviewPanel.receiveDataFromWebview();
     }
 
+    // 도구 파일을 메인 패널이 로드할 수 있는 URI로 바꾼다.
+    // 사이드바 기준으로 만든 URI를 여기 쓰면 로드에 실패하므로 패널마다 따로 계산해야 한다.
+    public static toWebviewUri(fileUri: vscode.Uri): string | undefined {
+        return OsciloScopeWebviewPanel.panel?.webview.asWebviewUri(fileUri).toString();
+    }
+
     public static sendDataToWebview(message: OsciloScopeMessage): void {
         if (!OsciloScopeWebviewPanel.panel) {
             console.error('[OsciloScopeWebviewPanel] 창이 열려있지 않아요!');

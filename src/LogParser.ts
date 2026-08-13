@@ -14,13 +14,10 @@ export interface RawLog {
     var_id         : number | null;   // 변수가 정의된 소유 프레임의 call_id (정체성 키)
 }
 
+// 로그 파일을 RawLog[]로 읽기만 한다.
+// 가공(변수별 묶기·그룹핑·이력 구성)은 웹뷰에서 도구의 analyze()가 담당한다.
 export class LogParser {
     private logFilePath: string;
-
-    private static readonly DOMAIN_LABELS: { [key: string]: string } = {
-        LOCAL  : 'Local',
-        GLOBAL : 'Global',
-    };
 
     constructor(logFilePath: string) {
         this.logFilePath = logFilePath;
@@ -40,69 +37,5 @@ export class LogParser {
             log.var_id         = log.var_id         ?? null;
             return log as RawLog;
         });
-    }
-
-    // var_id(소유 프레임 call_id)로 변수 정체성을 키잉한다.
-    // 수정 프레임(call_id)이 달라도 소유 프레임이 같으면 같은 변수로 묶인다.
-    // 폴백: var_id가 없는 구버전 로그는 이름만으로 키잉.
-    private getVarKey(log: RawLog): string {
-        if (log.var_id === null) {
-            return log.name;
-        }
-        return `${log.name}@${log.var_id}`;
-    }
-
-    // 사이드바 그룹: GLOBAL → Global, LOCAL → Local
-    private getGroupKey(log: RawLog): string {
-        return log.domain === 'GLOBAL' ? 'Global' : 'Local';
-    }
-
-    public transformData(rawLogs: RawLog[]): Object {
-        const result: { [group: string]: any[] } = {};
-        const varMap: { [key: string]: any } = {};
-        const stepCounter: { [key: string]: number } = {};
-
-        for (const log of rawLogs) {
-            const key = this.getVarKey(log);
-
-            if (!varMap[key]) {
-                // 변수 단위 메타는 첫 등장 시 한 번만 저장 (history 행마다 반복 X)
-                varMap[key] = {
-                    varKey       : key,
-                    varName      : log.name,
-                    type         : typeof log.data,
-                    scope        : LogParser.DOMAIN_LABELS[log.domain] ?? 'Unknown',
-                    func         : log.func,
-                    callId       : log.call_id,
-                    parentCallId : log.parent_call_id,
-                    callDepth    : log.call_depth,
-                    group        : this.getGroupKey(log),
-                    history      : []
-                };
-                stepCounter[key] = 0;
-            }
-
-            stepCounter[key]++;
-
-            const value = log.event === 'deleted' ? null : log.data;
-
-            // 스텝 단위 속성만 행마다 기록
-            varMap[key].history.push({
-                step  : stepCounter[key],
-                line  : log.line,
-                value : value,
-                event : log.event
-            });
-        }
-
-        for (const varData of Object.values(varMap)) {
-            const group = varData.group;
-            if (!result[group]) {
-                result[group] = [];
-            }
-            result[group].push(varData);
-        }
-
-        return result;
     }
 }
