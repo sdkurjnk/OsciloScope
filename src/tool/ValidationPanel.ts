@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -74,9 +75,11 @@ export class ValidationPanel {
             };
 
             const timer = setTimeout(() => {
+                // 결과를 먼저 확정한다. dispose()가 onDidDispose를 동기로 부르므로
+                // 순서를 뒤집으면 "패널이 닫혔다"가 타임아웃 리포트를 덮어쓴다.
+                finish(this.timeout(toolId));
                 // 패널을 dispose하면 무한 루프에 빠진 도구도 함께 회수된다.
                 panel.dispose();
-                finish(this.timeout(toolId));
             }, VALIDATION_TIMEOUT_MS);
 
             panel.webview.onDidReceiveMessage((message: OsciloScopeMessage) => {
@@ -155,8 +158,7 @@ vscode.postMessage({ command: 'UI_READY', payload: {} });
     }
 
     private nonce(): string {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        return Array.from({ length: 32 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        return crypto.randomBytes(16).toString('hex');
     }
 
     // 상세 리포트는 출력 채널로 보낸다. 사이드바에는 아이콘만 뜬다 (설계문서 §7.5).
