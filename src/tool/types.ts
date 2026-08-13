@@ -12,6 +12,13 @@ export const USER_TOOLS_DIR = ['.osciloscope', 'tools'];
 // 번들 도구 위치 (<확장 설치 경로>/tools/)
 export const BUILTIN_TOOLS_DIR = 'tools';
 
+// 워크스페이스에 배치하는 타입 정의 파일과 그 버전 스탬프.
+// 확장이 가진 버전과 파일 첫 줄이 다르면 덮어쓴다 (설계문서 §5.8).
+// 인터페이스가 바뀌었는데 옛 정의가 남아 실제와 어긋나는 것을 막기 위함.
+export const TOOL_TYPES_FILE    = 'osciloscope-tool.d.ts';
+export const TOOL_TYPES_VERSION = '0.2.0';
+export const TOOL_TYPES_STAMP   = /^\/\/ @osciloscope-types\s+(\S+)/;
+
 export type ToolSource = 'builtin' | 'user';
 
 // TOOLS_LIST의 항목. 확장은 도구를 실행할 수 없으므로 파일 정보만 담는다.

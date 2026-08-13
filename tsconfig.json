@@ -1,4 +1,7 @@
 {
+	/* 확장 소스만 컴파일한다. assets/templates/osciloscope-tool.d.ts는 사용자 워크스페이스에
+	   배치할 산출물이고, 전역 인터페이스를 선언하므로 확장 코드의 타입 범위에 새면 안 된다. */
+	"include": ["src"],
 	"compilerOptions": {
 		"module": "Node16",
 		"target": "ES2022",
