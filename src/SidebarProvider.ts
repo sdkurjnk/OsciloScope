@@ -2,16 +2,30 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
-import { ToolsProvider } from './ToolsProvider';
+import { ToolRegistry } from './tool/ToolRegistry';
+import { ToolTemplate } from './tool/ToolTemplate';
+import { ValidationPanel } from './tool/ValidationPanel';
+import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
+import {
+    CopyToolPayload,
+    OpenToolPayload,
+    SelectToolPayload,
+    StartRenderPayload,
+    ValidateToolPayload
+} from './tool/types';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
     private view?: vscode.WebviewView;
     private selectedLogPath?: string;
+    private selectedToolId?: string;
 
     constructor(
         private readonly extensionUri: vscode.Uri,
-        private readonly onLogFileSelected: (absolutePath: string) => void
+        private readonly registry: ToolRegistry,
+        private readonly template: ToolTemplate,
+        private readonly validation: ValidationPanel,
+        private readonly onLogFileSelected: (absolutePath: string, toolId?: string) => void
     ) {}
 
     public resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -19,9 +33,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [
-                vscode.Uri.joinPath(this.extensionUri, 'osciloscope')
-            ]
+            localResourceRoots: webviewResourceRoots(this.extensionUri)
         };
 
         webviewView.webview.html = this.getHtml(webviewView.webview);
@@ -32,10 +44,25 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     this.selectLogFile();
                     break;
                 case CommandTypes.START_RENDER:
-                    this.startRender();
+                    this.startRender(message.payload as StartRenderPayload);
                     break;
                 case CommandTypes.GET_TOOLS_LIST:
                     this.sendToolsList();
+                    break;
+                case CommandTypes.SELECT_TOOL:
+                    this.selectedToolId = (message.payload as SelectToolPayload).toolId;
+                    break;
+                case CommandTypes.CREATE_TOOL:
+                    this.createTool();
+                    break;
+                case CommandTypes.COPY_TOOL:
+                    this.copyTool((message.payload as CopyToolPayload).toolId);
+                    break;
+                case CommandTypes.OPEN_TOOL:
+                    this.template.openTool((message.payload as OpenToolPayload).toolId);
+                    break;
+                case CommandTypes.VALIDATE_TOOL:
+                    this.validateTool((message.payload as ValidateToolPayload).toolId);
                     break;
             }
         });
@@ -62,20 +89,56 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
 
     // START 버튼: 선택된 로그 파일로 메인 패널 렌더링 (창을 닫았어도 다시 열림)
-    private startRender(): void {
+    // 도구 id를 START에도 실어 보내 사이드바와 확장의 선택 상태 불일치를 없앤다 (설계문서 §9.2).
+    private startRender(payload: StartRenderPayload): void {
         if (!this.selectedLogPath) {
             vscode.window.showWarningMessage('OsciloScope: 먼저 로그 파일을 선택하세요.');
             return;
         }
-        this.onLogFileSelected(this.selectedLogPath);
+        if (payload?.toolId) {
+            this.selectedToolId = payload.toolId;
+        }
+        this.onLogFileSelected(this.selectedLogPath, this.selectedToolId);
     }
 
+    // 확장은 파일 시스템 스캔만 한다. 도구의 name/version은 사이드바가 import해서 채운다.
     private sendToolsList(): void {
-        const tools = ToolsProvider.listTools(this.extensionUri.fsPath);
+        if (!this.view) {
+            return;
+        }
         this.postMessage({
             command: CommandTypes.TOOLS_LIST,
-            payload: { tools }
+            payload: this.registry.toPayload(this.view.webview)
         });
+    }
+
+    // 생성·복사 결과는 TOOL_CREATED로 알린다. 목록 갱신은 파일 감시가 알아서 처리하므로
+    // 여기서 따로 보내지 않는다 (사이드바는 TOOLS_CHANGED를 받고 다시 요청한다).
+    private async createTool(): Promise<void> {
+        const created = await this.template.createTool();
+        if (created) {
+            this.selectedToolId = created.toolId;
+            this.postMessage({ command: CommandTypes.TOOL_CREATED, payload: created });
+        }
+    }
+
+    private async copyTool(toolId: string): Promise<void> {
+        const created = await this.template.copyTool(toolId);
+        if (created) {
+            this.selectedToolId = created.toolId;
+            this.postMessage({ command: CommandTypes.TOOL_CREATED, payload: created });
+        }
+    }
+
+    // 검사는 전용 임시 패널에서 돌고, 결과 리포트만 사이드바로 돌아온다.
+    private async validateTool(toolId: string): Promise<void> {
+        const report = await this.validation.run(toolId);
+        this.postMessage({ command: CommandTypes.VALIDATION_RESULT, payload: report });
+    }
+
+    // 파일 감시 알림. 사이드바가 받으면 GET_TOOLS_LIST로 목록을 다시 요청한다.
+    public notifyToolsChanged(): void {
+        this.postMessage({ command: CommandTypes.TOOLS_CHANGED, payload: {} });
     }
 
     private postMessage(message: OsciloScopeMessage): void {
@@ -94,6 +157,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             return `${attr}="${webviewUri}"`;
         });
 
-        return html;
+        return injectCspSource(html, webview);
     }
 }
