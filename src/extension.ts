@@ -7,6 +7,7 @@ import { CommandTypes } from './OsciloScopeMessage';
 import { SidebarProvider } from './SidebarProvider';
 import { ToolRegistry } from './tool/ToolRegistry';
 import { ToolTemplate } from './tool/ToolTemplate';
+import { ValidationPanel } from './tool/ValidationPanel';
 import { DEFAULT_TOOL_ID, UpdateAllDataPayload } from './tool/types';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -17,6 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
     // 도구 파일 탐색·감시. 확장은 도구 코드를 실행하지 않고 파일 정보만 다룬다.
     const toolRegistry = new ToolRegistry(context.extensionUri);
     const toolTemplate = new ToolTemplate(context.extensionUri, toolRegistry, output);
+    const validation   = new ValidationPanel(context.extensionUri, toolRegistry, output);
 
     // 기존 커맨드 안에 있던 로직을 재사용 가능한 함수로 분리
     // (사이드바에서 파일 선택했을 때도 동일한 로직을 타야 하므로)
@@ -74,6 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
         context.extensionUri,
         toolRegistry,
         toolTemplate,
+        validation,
         (absolutePath, toolId) => { loadLogFile(absolutePath, toolId); }
     );
 

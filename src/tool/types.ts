@@ -23,6 +23,13 @@ export const TOOL_TYPES_STAMP   = /^\/\/ @osciloscope-types\s+(\S+)/;
 // 기존 transformData + 고정 화면을 그대로 옮긴 것이라 동작이 지금과 같다 (설계문서 §8).
 export const DEFAULT_TOOL_ID = 'change-detector';
 
+// 검사 전체 제한 시간. 초과하면 패널을 dispose해서 그 안에서 돌던 코드까지 함께 없앤다.
+// 도구가 while(true)에 빠져도 회수할 수 있으므로 실행 시간은 warn이 아니라 fail이다 (설계문서 §7.4).
+export const VALIDATION_TIMEOUT_MS = 15_000;
+
+// 검사 로직은 웹뷰에서 돈다. 확장은 이 모듈을 로드할 껍데기 패널만 띄운다.
+export const VALIDATOR_MODULE = ['osciloscope', 'tool-host', 'ToolValidator.js'];
+
 export type ToolSource = 'builtin' | 'user';
 
 // TOOLS_LIST의 항목. 확장은 도구를 실행할 수 없으므로 파일 정보만 담는다.

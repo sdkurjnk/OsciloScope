@@ -4,8 +4,15 @@ import * as vscode from 'vscode';
 import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
 import { ToolRegistry } from './tool/ToolRegistry';
 import { ToolTemplate } from './tool/ToolTemplate';
+import { ValidationPanel } from './tool/ValidationPanel';
 import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
-import { CopyToolPayload, OpenToolPayload, SelectToolPayload, StartRenderPayload } from './tool/types';
+import {
+    CopyToolPayload,
+    OpenToolPayload,
+    SelectToolPayload,
+    StartRenderPayload,
+    ValidateToolPayload
+} from './tool/types';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
@@ -17,6 +24,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         private readonly extensionUri: vscode.Uri,
         private readonly registry: ToolRegistry,
         private readonly template: ToolTemplate,
+        private readonly validation: ValidationPanel,
         private readonly onLogFileSelected: (absolutePath: string, toolId?: string) => void
     ) {}
 
@@ -52,6 +60,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     break;
                 case CommandTypes.OPEN_TOOL:
                     this.template.openTool((message.payload as OpenToolPayload).toolId);
+                    break;
+                case CommandTypes.VALIDATE_TOOL:
+                    this.validateTool((message.payload as ValidateToolPayload).toolId);
                     break;
             }
         });
@@ -117,6 +128,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             this.selectedToolId = created.toolId;
             this.postMessage({ command: CommandTypes.TOOL_CREATED, payload: created });
         }
+    }
+
+    // 검사는 전용 임시 패널에서 돌고, 결과 리포트만 사이드바로 돌아온다.
+    private async validateTool(toolId: string): Promise<void> {
+        const report = await this.validation.run(toolId);
+        this.postMessage({ command: CommandTypes.VALIDATION_RESULT, payload: report });
     }
 
     // 파일 감시 알림. 사이드바가 받으면 GET_TOOLS_LIST로 목록을 다시 요청한다.
