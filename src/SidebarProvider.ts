@@ -2,15 +2,18 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
-import { ToolsProvider } from './ToolsProvider';
+import { ToolRegistry } from './tool/ToolRegistry';
+import { SelectToolPayload, StartRenderPayload } from './tool/types';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
     private view?: vscode.WebviewView;
     private selectedLogPath?: string;
+    private selectedToolId?: string;
 
     constructor(
         private readonly extensionUri: vscode.Uri,
+        private readonly registry: ToolRegistry,
         private readonly onLogFileSelected: (absolutePath: string) => void
     ) {}
 
@@ -32,10 +35,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     this.selectLogFile();
                     break;
                 case CommandTypes.START_RENDER:
-                    this.startRender();
+                    this.startRender(message.payload as StartRenderPayload);
                     break;
                 case CommandTypes.GET_TOOLS_LIST:
                     this.sendToolsList();
+                    break;
+                case CommandTypes.SELECT_TOOL:
+                    this.selectedToolId = (message.payload as SelectToolPayload).toolId;
                     break;
             }
         });
@@ -62,20 +68,36 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
 
     // START 버튼: 선택된 로그 파일로 메인 패널 렌더링 (창을 닫았어도 다시 열림)
-    private startRender(): void {
+    // 도구 id를 START에도 실어 보내 사이드바와 확장의 선택 상태 불일치를 없앤다 (설계문서 §9.2).
+    private startRender(payload: StartRenderPayload): void {
         if (!this.selectedLogPath) {
             vscode.window.showWarningMessage('OsciloScope: 먼저 로그 파일을 선택하세요.');
             return;
         }
+        if (payload?.toolId) {
+            this.selectedToolId = payload.toolId;
+        }
         this.onLogFileSelected(this.selectedLogPath);
     }
 
+    // 확장은 파일 시스템 스캔만 한다. 도구의 name/version은 사이드바가 import해서 채운다.
     private sendToolsList(): void {
-        const tools = ToolsProvider.listTools(this.extensionUri.fsPath);
+        if (!this.view) {
+            return;
+        }
         this.postMessage({
             command: CommandTypes.TOOLS_LIST,
-            payload: { tools }
+            payload: this.registry.toPayload(this.view.webview)
         });
+    }
+
+    // 파일 감시 알림. 사이드바가 받으면 GET_TOOLS_LIST로 목록을 다시 요청한다.
+    public notifyToolsChanged(): void {
+        this.postMessage({ command: CommandTypes.TOOLS_CHANGED, payload: {} });
+    }
+
+    public getSelectedToolId(): string | undefined {
+        return this.selectedToolId;
     }
 
     private postMessage(message: OsciloScopeMessage): void {
