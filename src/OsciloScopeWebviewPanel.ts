@@ -80,9 +80,6 @@ export class OsciloScopeWebviewPanel {
                     );
                     OsciloScopeWebviewPanel.pendingMessages = [];
                     break;
-                case CommandTypes.VARIABLE_CHANGED:
-                    console.log('[OsciloScopeWebviewPanel] 선택된 변수 변경:', message.payload);
-                    break;
             }
         });
     }

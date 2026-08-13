@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 
-interface RawLog {
+// 도구(analyze)의 입력 타입이자 UPDATE_ALL_DATA payload의 일부라 외부에 공개한다.
+export interface RawLog {
     name           : string;
     data           : any;
     event          : string;          // "init" | "updated" | "deleted"
