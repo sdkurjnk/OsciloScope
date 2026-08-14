@@ -1,5 +1,14 @@
-/* ── 타임라인 ── */
-.tl-hdr {
+/* ── 타임라인 위젯 (host.widgets.timeline) ──
+ * 전역이던 스타일을 .osc-widget 하위로 한정한다 (설계문서 10장). */
+
+.osc-widget.osc-timeline {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.osc-widget .tl-hdr {
   padding: 10px 16px;
   border-bottom: 1px solid #3c3c3c;
   display: flex;
@@ -8,22 +17,22 @@
   background: #252526;
   flex-shrink: 0;
 }
-.tl-name { font-size: 13px; font-weight: 500; color: #cccccc; }
-.tl-scope { font-size: 11px; color: #858585; }
-.tl-cnt { margin-left: auto; font-size: 10px; color: #858585; }
+.osc-widget .tl-name { font-size: 13px; font-weight: 500; color: #cccccc; }
+.osc-widget .tl-scope { font-size: 11px; color: #858585; }
+.osc-widget .tl-cnt { margin-left: auto; font-size: 10px; color: #858585; }
 
-.tl-body {
+.osc-widget .tl-body {
   flex: 1;
   overflow-y: auto;
   padding: 16px 16px 16px 12px;
   display: flex;
   flex-direction: column;
 }
-.tl-body::-webkit-scrollbar { width: 5px; }
-.tl-body::-webkit-scrollbar-thumb { background: #3c3c3c; border-radius: 3px; }
+.osc-widget .tl-body::-webkit-scrollbar { width: 5px; }
+.osc-widget .tl-body::-webkit-scrollbar-thumb { background: #3c3c3c; border-radius: 3px; }
 
 /* Empty state */
-.empty {
+.osc-widget .empty {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -33,10 +42,11 @@
   color: #555;
   font-size: 12px;
 }
+.osc-widget .empty-ico { font-size: 24px; }
 
 /* History row */
-.hr { display: flex; align-items: flex-start; gap: 10px; position: relative; }
-.hr:not(:last-child)::after {
+.osc-widget .hr { display: flex; align-items: flex-start; gap: 10px; position: relative; }
+.osc-widget .hr:not(:last-child)::after {
   content: '';
   position: absolute;
   left: 20px;
@@ -47,7 +57,7 @@
 }
 
 /* Line badge */
-.li {
+.osc-widget .li {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -56,9 +66,9 @@
   padding-top: 4px;
   gap: 3px;
 }
-.ld { width: 10px; height: 10px; border-radius: 50%; background: #3c3c3c; flex-shrink: 0; }
-.hr.changed .ld { background: #4fc1ff; box-shadow: 0 0 0 3px rgba(79,193,255,.15); }
-.ln {
+.osc-widget .ld { width: 10px; height: 10px; border-radius: 50%; background: #3c3c3c; flex-shrink: 0; }
+.osc-widget .hr.changed .ld { background: #4fc1ff; box-shadow: 0 0 0 3px rgba(79,193,255,.15); }
+.osc-widget .ln {
   font-size: 11px;
   font-weight: 500;
   color: #555;
@@ -68,10 +78,10 @@
   padding: 1px 5px;
   white-space: nowrap;
 }
-.hr.changed .ln { color: #4fc1ff; border-color: #1b4f72; background: rgba(4,57,94,.25); }
+.osc-widget .hr.changed .ln { color: #4fc1ff; border-color: #1b4f72; background: rgba(4,57,94,.25); }
 
 /* Value card */
-.hc {
+.osc-widget .hc {
   flex: 1;
   padding: 8px 12px;
   border-radius: 4px;
@@ -83,20 +93,20 @@
   justify-content: space-between;
   gap: 8px;
 }
-.hr.changed .hc { border-color: #1b4f72; background: rgba(4,57,94,.13); }
-.hv { font-size: 14px; color: #cccccc; font-weight: 500; }
-.hr.changed .hv { color: #4fc1ff; }
+.osc-widget .hr.changed .hc { border-color: #1b4f72; background: rgba(4,57,94,.13); }
+.osc-widget .hv { font-size: 14px; color: #cccccc; font-weight: 500; word-break: break-all; }
+.osc-widget .hr.changed .hv { color: #4fc1ff; }
 
 /* Change tag */
-.ct { font-size: 11px; padding: 2px 7px; border-radius: 3px; flex-shrink: 0; }
-.ct.inc { background: rgba(78,201,176,.15); color: #4ec9b0; }
-.ct.dec { background: rgba(244,135,113,.15); color: #f48771; }
-.ct.new { background: rgba(79,193,255,.15); color: #4fc1ff; }
-.ct.same { color: #444; background: #2a2a2a; border: 1px solid #3c3c3c; }
+.osc-widget .ct { font-size: 11px; padding: 2px 7px; border-radius: 3px; flex-shrink: 0; }
+.osc-widget .ct.inc { background: rgba(78,201,176,.15); color: #4ec9b0; }
+.osc-widget .ct.dec { background: rgba(244,135,113,.15); color: #f48771; }
+.osc-widget .ct.new { background: rgba(79,193,255,.15); color: #4fc1ff; }
+.osc-widget .ct.same { color: #444; background: #2a2a2a; border: 1px solid #3c3c3c; }
 
-/* ── 변수 단위 메타 뱃지 (헤더에 한 번만 표시, 행마다 반복 X) ── */
-.tl-badges { display: flex; gap: 4px; align-items: center; }
-.mb {
+/* 변수 단위 메타 뱃지 (헤더에 한 번만) */
+.osc-widget .tl-badges { display: flex; gap: 4px; align-items: center; }
+.osc-widget .mb {
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 3px;
@@ -105,13 +115,13 @@
   color: #858585;
   white-space: nowrap;
 }
-.mb-func   { color: #dcdcaa; border-color: #4a4a2f; }
-.mb-call   { color: #4fc1ff; border-color: #1b4f72; }
-.mb-parent { color: #c586c0; border-color: #4b2f4a; }
-.mb-depth  { color: #4ec9b0; border-color: #2f4a44; }
+.osc-widget .mb-func   { color: #dcdcaa; border-color: #4a4a2f; }
+.osc-widget .mb-call   { color: #4fc1ff; border-color: #1b4f72; }
+.osc-widget .mb-parent { color: #c586c0; border-color: #4b2f4a; }
+.osc-widget .mb-depth  { color: #4ec9b0; border-color: #2f4a44; }
 
-/* ── deleted 이벤트 행 ── */
-.hr.deleted .hc { border-color: #5a1d1d; background: rgba(94,24,24,.12); }
-.hr.deleted .hv { color: #f48771; text-decoration: line-through; }
-.hr.deleted .ld { background: #f48771; box-shadow: 0 0 0 3px rgba(244,135,113,.15); }
-.ct.del { background: rgba(244,135,113,.15); color: #f48771; }
+/* deleted 이벤트 행 */
+.osc-widget .hr.deleted .hc { border-color: #5a1d1d; background: rgba(94,24,24,.12); }
+.osc-widget .hr.deleted .hv { color: #f48771; text-decoration: line-through; }
+.osc-widget .hr.deleted .ld { background: #f48771; box-shadow: 0 0 0 3px rgba(244,135,113,.15); }
+.osc-widget .ct.del { background: rgba(244,135,113,.15); color: #f48771; }

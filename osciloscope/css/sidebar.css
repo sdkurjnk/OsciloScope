@@ -1,26 +1,23 @@
-/* ── 사이드바 ── */
-.sb {
-  width: 200px;
-  background: #252526;
-  border-right: 1px solid #3c3c3c;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
+/* ── 변수 목록 위젯 (host.widgets.varList) ──
+ * 전역이던 스타일을 .osc-widget 하위로 한정한다.
+ * 클래스명이 .vi, .vn, .vt처럼 짧아서 사용자 도구가 같은 이름을 쓰면 섞이기 때문. */
+
+.osc-widget.osc-varlist {
+  height: 100%;
+  overflow-y: auto;
 }
-.sb-hdr {
-  padding: 10px 12px;
-  font-size: 11px;
-  color: #858585;
-  border-bottom: 1px solid #3c3c3c;
-  letter-spacing: .08em;
+.osc-widget.osc-varlist::-webkit-scrollbar { width: 5px; }
+.osc-widget.osc-varlist::-webkit-scrollbar-thumb { background: #3c3c3c; border-radius: 3px; }
+
+.osc-widget .osc-list-empty {
+  padding: 12px;
+  color: #555;
+  font-size: 12px;
 }
-.sb-list { overflow-y: auto; flex: 1; }
-.sb-list::-webkit-scrollbar { width: 5px; }
-.sb-list::-webkit-scrollbar-thumb { background: #3c3c3c; border-radius: 3px; }
 
 /* Scope group */
-.sg { border-bottom: 1px solid #3c3c3c; }
-.sg-lbl {
+.osc-widget .sg { border-bottom: 1px solid #3c3c3c; }
+.osc-widget .sg-lbl {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -31,14 +28,21 @@
   cursor: pointer;
   user-select: none;
 }
-.sg-lbl:hover { background: #2a2d2e; }
-.chev { font-size: 10px; color: #858585; transition: transform .15s; }
-.sg.collapsed .chev { transform: rotate(-90deg); }
-.sg.collapsed .vl { display: none; }
+.osc-widget .sg-lbl:hover { background: #2a2d2e; }
+.osc-widget .sg-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.osc-widget .sg-cnt { font-size: 10px; color: #858585; flex-shrink: 0; }
+.osc-widget .chev { font-size: 10px; color: #858585; transition: transform .15s; }
+.osc-widget .sg.collapsed .chev { transform: rotate(-90deg); }
+.osc-widget .sg.collapsed .vl { display: none; }
 
 /* Variable items */
-.vl { padding: 4px 0; }
-.vi {
+.osc-widget .vl { padding: 4px 0; }
+.osc-widget .vi {
   padding: 5px 12px 5px 26px;
   font-size: 12px;
   color: #9d9d9d;
@@ -47,9 +51,9 @@
   align-items: center;
   gap: 6px;
 }
-.vi:hover { background: #2a2d2e; color: #cccccc; }
-.vi.active { background: #04395e; color: #4fc1ff; }
-.vt {
+.osc-widget .vi:hover { background: #2a2d2e; color: #cccccc; }
+.osc-widget .vi.active { background: #04395e; color: #4fc1ff; }
+.osc-widget .vt {
   font-size: 10px;
   padding: 1px 5px;
   border-radius: 3px;
@@ -57,46 +61,11 @@
   color: #858585;
   flex-shrink: 0;
 }
-.vi.active .vt { background: #1b3a4b; color: #4fc1ff; }
-.vn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.osc-widget .vi.active .vt { background: #1b3a4b; color: #4fc1ff; }
+.osc-widget .vn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ── 호출 그룹 depth 뱃지 (변수 단위 속성 — 그룹 헤더에 한 번만) ── */
-.sg-depth {
-  font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: #2a2a2a;
-  border: 1px solid #3c3c3c;
-  color: #858585;
-  flex-shrink: 0;
-}
-
-/* ── 2단 사이드바: 함수 그룹 / 호출 인스턴스 ── */
-.sg-cnt {
-  font-size: 10px;
-  color: #858585;
-  flex-shrink: 0;
-}
-.ci {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 12px 2px 22px;
-  margin-top: 2px;
-}
-.ci-id {
-  font-size: 10px;
-  font-weight: 500;
-  color: #4fc1ff;
-  background: rgba(4,57,94,.25);
-  border: 1px solid #1b4f72;
-  border-radius: 3px;
-  padding: 0 5px;
-}
-.vi-nested { padding-left: 34px; }
-
-/* ── 변수 행 call_id 칩 (같은 이름 변수의 호출 인스턴스 구분) ── */
-.vc {
+/* 변수 행 call_id 칩 (같은 이름 변수의 호출 인스턴스 구분) */
+.osc-widget .vc {
   margin-left: auto;
   font-size: 9px;
   color: #4fc1ff;
@@ -106,20 +75,3 @@
   padding: 0 4px;
   flex-shrink: 0;
 }
-
-/* ── 로고 브랜드 블록 ── */
-.sb-brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 12px;
-  border-bottom: 1px solid #3c3c3c;
-}
-.sb-brand .wm { line-height: 1.15; }
-.sb-brand .wm .nm {
-  font-size: 13px;
-  font-weight: 700;
-  color: #4fc1ff;
-  letter-spacing: .04em;
-}
-.sb-brand .wm .tag { font-size: 9px; color: #858585; }

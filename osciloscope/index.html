@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 사용자 코드를 로드하는 웹뷰이므로 CSP를 명시한다 (설계문서 5.3).
+     script-src를 cspSource로 묶으면 우리 스크립트와 도구 파일은 로드되지만
+     인라인 스크립트는 차단된다 — 로그 값에 섞인 script 태그나 onerror= 속성이 실행되지 않는다.
+     {{cspSource}}는 WebviewSupport.injectCspSource가 채운다. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src {{cspSource}};
+  style-src  {{cspSource}} 'unsafe-inline';
+  img-src    {{cspSource}} data:;
+  font-src   {{cspSource}};
+  connect-src 'none';">
 <title>OsciloScope</title>
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/sidebar.css">
@@ -10,46 +21,16 @@
 </head>
 <body>
 
+<!-- 우리가 그리는 것은 헤더뿐이다. 그 아래 전 영역이 도구 몫 (설계문서 4.4) -->
 <div class="hdr">
   <span class="path" id="hdrPath"><span class="none">로그 파일 미선택</span></span>
+  <span class="tool" id="hdrTool"></span>
   <div class="badge waiting" id="badge">대기 중</div>
 </div>
 
-<div class="main">
-  <div class="sb">
-    <!-- 브랜드 (워드마크) -->
-    <div class="sb-brand">
-      <div class="wm">
-        <div class="nm">OsciloScope</div>
-        <div class="tag">Variable Monitor</div>
-      </div>
-    </div>
+<!-- host.mount — 도구가 전부 그린다 -->
+<div id="pluginRoot"></div>
 
-    <div class="sb-hdr">VARIABLES</div>
-    <div class="sb-list" id="sbList"></div>
-  </div>
-  <div class="content">
-    <div class="tl-hdr" id="tlHdr" style="display:none">
-      <span class="tl-name" id="tlName">—</span>
-      <span class="tl-scope" id="tlScope">—</span>
-      <span class="tl-badges" id="tlBadges"></span>
-      <span class="tl-cnt" id="tlCnt"></span>
-    </div>
-    <div class="tl-body" id="tlBody">
-      <div class="empty">
-        <div style="font-size:24px">⬡</div>
-        <p>사이드바에서 변수를 선택하세요</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="js/constants.js"></script>
-<script src="js/DataManager.js"></script>
-<script src="js/SidebarManager.js"></script>
-<script src="js/TimelineViewer.js"></script>
-<script src="js/VisualizerApp.js"></script>
-<script src="js/mockData.js"></script>
-<script src="js/main.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -20,8 +20,30 @@ Extension Host 코드(`src/`)는 webpack으로 단일 `dist/extension.js`로 번
 | `lint` | `eslint src` |
 | `test` | `vscode-test` (헤드리스 VS Code 통합 테스트) |
 
-> **Webview 프론트(`osciloscope/`)는 번들되지 않는다.** 원본 JS/CSS/HTML을 그대로 패키징하며
-> `localResourceRoots`로 `osciloscope` 폴더만 로드 허용한다.
+> **Webview 프론트(`osciloscope/`)는 번들되지 않는다.** 원본 JS/CSS/HTML을 그대로 패키징한다.
+> ES 모듈이라 번들 없이도 의존성이 해결된다.
+
+`localResourceRoots`는 `osciloscope/` 하나가 아니라 셋이다 — 도구 파일을 웹뷰가 로드해야 하기
+때문이다(`src/WebviewSupport.ts`).
+
+| 경로 | 이유 |
+| --- | --- |
+| `<확장>/osciloscope` | 우리 웹뷰 자원 |
+| `<확장>/tools` | 번들 도구 |
+| 워크스페이스 폴더들 | 사용자 도구 (`.osciloscope/tools/`) |
+
+범위가 넓어진 만큼 두 웹뷰 HTML에 CSP 메타를 넣어 인라인 스크립트와 외부 요청을 차단한다.
+
+### 패키징에 반드시 포함되어야 하는 것
+
+`.vscodeignore`가 빼먹으면 런타임에 조용히 깨지는 항목들이다.
+
+| 대상 | 주의 |
+| --- | --- |
+| `tools/*.tool.js` | 없으면 기본 도구가 사라져 START가 실패한다 |
+| `assets/templates/tool-skeleton.js` | 없으면 '만들기'가 동작하지 않는다 |
+| `assets/templates/osciloscope-tool.d.ts` | `**/*.ts` 규칙에 걸리므로 **예외 규칙이 필요하다**. 빠지면 도구 작성 시 자동완성이 안 된다 |
+| `osciloscope/tool-host/**` | 위젯·검사기·픽스처. 픽스처가 빠지면 유효성 검사가 실패한다 |
 
 ## 태그 기반 버저닝
 

@@ -87,28 +87,124 @@ body {
 }
 .start-btn:disabled { opacity: .45; cursor: default; }
 
-/* TOOLS: 체크박스 목록 (표시만, 선택 동작은 스코프 아님) */
+/* ── TOOLS 헤더 (라벨 + 만들기 버튼) ── */
+.lbl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.mk-btn {
+  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  background: #2d2d2d;
+  color: #cccccc;
+  font-family: inherit;
+  font-size: 10px;
+  border-radius: 3px;
+  padding: 2px 6px;
+  cursor: pointer;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.mk-btn:hover:not(:disabled) { background: #37373d; border-color: #4a4a4a; }
+.mk-btn:disabled { opacity: .45; cursor: default; }
+
+/* 워크스페이스 없음 / 신뢰 안 됨 안내 */
+.notice {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #dcdcaa;
+  background: rgba(220,220,170,.08);
+  border: 1px solid #4a4a2f;
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+}
+
+/* ── 도구 목록 ── */
 .tool-list { display: flex; flex-direction: column; gap: 2px; }
+
 .tool-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 2px;
+  padding: 5px 4px;
+  border-radius: 3px;
   font-size: 12px;
   cursor: pointer;
 }
-.tool-item input[type="checkbox"] {
+.tool-item:hover { background: var(--vscode-list-hoverBackground, #2a2d2e); }
+.tool-item.selected { background: var(--vscode-list-activeSelectionBackground, #04395e); }
+.tool-item.broken { cursor: default; }
+
+.tool-item input[type="radio"] {
   accent-color: #4fc1ff;
   width: 13px;
   height: 13px;
   cursor: pointer;
   flex-shrink: 0;
+  margin: 0;
 }
+.tool-item input[type="radio"]:disabled { cursor: default; }
+
+/* 이름 + 버전 + 배지가 들어가는 가운데 영역 */
+.tool-main { flex: 1; min-width: 0; }
+.tool-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .tool-item .tn {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.tool-item.broken .tn { color: #f48771; }
+.tool-ver { font-size: 10px; color: #6b6b6b; flex-shrink: 0; }
+
+/* 도구 설명 / 오류 메시지 */
+.tool-sub {
+  font-size: 10px;
+  color: #6b6b6b;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-sub.err { color: #f48771; white-space: normal; }
+
+/* 배지: 기본 / 재정의 */
+.tool-badge {
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid #3c3c3c;
+  color: #858585;
+  flex-shrink: 0;
+}
+.tool-badge.builtin  { color: #858585; }
+.tool-badge.override { color: #c586c0; border-color: #4b2f4a; }
+
+/* 검사 결과 아이콘 */
+.tool-check { font-size: 11px; flex-shrink: 0; width: 12px; text-align: center; }
+.tool-check.pass { color: #4ec9b0; }
+.tool-check.warn { color: #dcdcaa; }
+.tool-check.fail { color: #f48771; }
+.tool-check.running { color: #858585; }
+
+/* 행 액션 (열기 / 복사 / 검사) — 평소엔 숨기고 hover·선택 시 노출 */
+.tool-acts { display: none; gap: 2px; flex-shrink: 0; }
+.tool-item:hover .tool-acts,
+.tool-item.selected .tool-acts { display: flex; }
+.act-btn {
+  border: none;
+  background: transparent;
+  color: #858585;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 3px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.act-btn:hover { background: #37373d; color: #cccccc; }
+
 .tool-empty {
   font-size: 11px;
   color: #6b6b6b;

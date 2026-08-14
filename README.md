@@ -26,6 +26,7 @@ recursive calls, and tagged per step.
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [The interface](#the-interface)
+- [Analysis tools](#analysis-tools)
 - [How it works](#how-it-works)
 - [Requirements](#requirements)
 - [Documentation](#documentation)
@@ -69,8 +70,9 @@ Install from the [Open VSX Registry](https://open-vsx.org/extension/sdkurjnk/osc
    ```
 
 2. Open the **OsciloScope** view from the Activity Bar.
-3. Under **SOURCE**, pick the `.jsonl` file, then click **START**.
-4. Select a variable in the list to see its per-step history.
+3. Under **SOURCE**, pick the `.jsonl` file. Optionally choose an analysis tool under **TOOLS**.
+4. Click **START**.
+5. Select a variable in the list to see its per-step history.
 
 ## The interface
 
@@ -81,9 +83,13 @@ Install from the [Open VSX Registry](https://open-vsx.org/extension/sdkurjnk/osc
 | Area | What it shows |
 | --- | --- |
 | **SOURCE** (sidebar) | Pick a `.jsonl` log and **START** rendering |
+| **TOOLS** (sidebar) | Choose an analysis tool, create your own, or validate one |
 | **Variables** (sidebar) | Variables grouped by scope (Local / Global); recursive or repeated calls stay distinct by call frame (`#call_id`) |
 | **Timeline header** | The selected variable's function, call id, parent call, and depth |
 | **Timeline** | Each step's value, source line, and change tag |
+
+The variables list and timeline above come from the built-in `change-detector` tool — a different
+tool can draw something else entirely.
 
 Change tags:
 
@@ -94,12 +100,28 @@ Change tags:
 | `changed` | non-numeric value changed |
 | `deleted` | variable went out of scope |
 
+## Analysis tools
+
+The analysis view is drawn by a **tool** — a small ES module with two hooks, `analyze` (compute) and
+`render` (draw). Two ship with the extension, and you can write your own.
+
+- **+ 만들기** in the sidebar scaffolds `.osciloscope/tools/<id>.tool.js` with type definitions
+  attached, so autocompletion works while you edit.
+- The generated file already runs — you start from something working, not an empty shell.
+- The **✓** button runs a black-box validation: 12 checks across 5 standard fixtures
+  (normal, empty, deleted, recursive, legacy).
+
+Writing guide: [`docs/plugin-tools.md`](docs/plugin-tools.md).
+
 ## How it works
 
-Following VS Code's process split, OsciloScope has two parts: an **Extension Host** that parses the log
-and groups variables by identity, and a **Webview** that renders the sidebar and timeline. They talk
-only over `postMessage`, and identity is keyed on oscilo's `var_id` so a name reused across recursive
-calls stays separate. See the [design docs](docs/).
+Following VS Code's process split, OsciloScope has two parts: an **Extension Host** that reads the log
+and manages files and panels, and a **Webview** that runs tools and renders the result. They talk only
+over `postMessage`.
+
+Tools run in the webview, never in the Extension Host — user code has no path to the file system,
+the network, or the extension API. Identity is keyed on oscilo's `var_id`, so a name reused across
+recursive calls stays separate. See the [design docs](docs/).
 
 ## Requirements
 

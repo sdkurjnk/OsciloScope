@@ -44,55 +44,91 @@ varKey = var_id 있으면  →  `${name}@${var_id}`
 
 - **소유 프레임 기준**이 중요하다. 값을 *수정*한 프레임(`call_id`)이 달라도,
   변수가 *정의된* 프레임(`var_id`)이 같으면 같은 변수로 묶인다.
-- 그래서 프론트는 `varName`이 아니라 반드시 `varKey`로 변수를 조회한다
-  (`DataManager.getVarByKey`).
+- 그래서 변수는 `varName`이 아니라 반드시 `varKey`로 조회한다.
+  키잉은 `ctx.helpers.varKeyOf(log)`가 해 준다.
 
 ## 그룹핑
 
-`getGroupKey`는 `domain`을 사이드바 그룹으로 매핑한다.
+`groupOf(log)` 헬퍼가 `domain`을 그룹명으로 매핑한다.
 
 ```
 GLOBAL → 'Global'
 그 외   → 'Local'
 ```
 
-표시용 라벨은 `DOMAIN_LABELS`(`LOCAL→Local`, `GLOBAL→Global`)로 별도 매핑한다.
+도구가 이 헬퍼를 쓰지 않고 자기 축으로 그룹을 만들어도 된다 — 예를 들어 기본 도구
+`monotonic`은 `단조 증가` / `그 외`로 나눈다.
 
-## 출력: `transformData`의 결과 구조
+## 출력: 도구가 만드는 model
 
-`transformData(rawLogs)`는 이벤트의 평면 배열을 **그룹 → 변수 → 히스토리** 3계층으로 접는다.
-핵심은 **변수 단위 메타는 첫 등장 시 한 번만, 스텝 단위 속성은 이벤트마다** 기록하는 분리다.
+**가공은 더 이상 확장이 하지 않는다.** `LogParser`는 `RawLog[]`를 읽기만 하고, 변수별 묶기·
+그룹핑·이력 구성은 웹뷰에서 도구의 `analyze()`가 맡는다(플러그인 구조 이후).
 
-```jsonc
-{
-  "Global": [
-    {
-      "varKey": "total@1",       // 정체성 키
-      "varName": "total",
-      "type": "number",          // 첫 등장 값의 typeof
-      "scope": "Global",         // DOMAIN_LABELS 매핑
-      "func": "<module>",
-      "callId": 1,
-      "parentCallId": null,
-      "callDepth": 1,
-      "group": "Global",
-      "history": [               // 스텝 단위 (이벤트마다 1행)
-        { "step": 1, "line": 1,  "value": 0, "event": "init" },
-        { "step": 2, "line": 30, "value": 6, "event": "updated" }
-      ]
-    }
-  ],
-  "Local": [ /* ... */ ]
+`analyze()`가 반환하는 model의 **형식에는 규격이 없다.** 시스템은 들여다보지 않고 `render()`에
+그대로 넘긴다. 도구가 히트맵을 그리든 요약 표를 내든 자기 자료구조를 쓰면 된다.
+
+> 예전 `transformData`가 하던 일은 기본 도구 `change-detector`로 옮겨졌다.
+> 동작이 같으므로 결과 화면도 이전과 같다.
+
+## 위젯 권장 규격 (`VarEntry`)
+
+규격이 없다는 것과 별개로, **표준 위젯(`varList`/`timeline`)을 쓰려면** 데이터가 아래 모양이어야
+한다. 위젯을 쓰지 않는 도구는 지키지 않아도 되고, **검사기도 이 모양을 강제하지 않는다.**
+
+```ts
+// varList의 groups: { [그룹명]: VarEntry[] }
+interface VarEntry {
+  varKey        : string;   // 정체성 키
+  varName       : string;
+  history       : HistoryRow[];
+  type?         : string;   // 보통 첫 등장 값의 typeof
+  scope?        : string;   // 'Global' | 'Local'
+  func?         : string | null;
+  callId?       : number | null;
+  parentCallId? : number | null;
+  callDepth?    : number | null;
+}
+
+interface HistoryRow {
+  step  : number;          // 변수별 이벤트 순번 (전역 타임라인 순번이 아님)
+  value : any;             // deleted는 보통 null
+  event : string;          // 'init' | 'updated' | 'deleted'
+  line? : number | null;
 }
 ```
 
-변환 규칙 요약:
+`varList`는 `scope !== 'Global'`이고 `callId`가 있을 때 `#call_id` 칩을 붙여 재귀/중복 호출
+인스턴스를 구분한다. `timeline`은 `func`/`callId`/`parentCallId`/`callDepth`를 헤더 배지로
+**한 번만** 표시한다 — 행마다 반복하지 않는 것이 핵심이다.
 
-1. 각 로그의 `varKey`를 계산한다.
-2. 처음 보는 키면 변수 메타(위 필드들)를 `varMap`에 1회 생성하고 `stepCounter=0`.
-3. 매 이벤트마다 `stepCounter++` 후 `history`에 스텝 행을 push.
-   `event === 'deleted'`면 `value`는 `null`로 저장한다.
-4. 마지막에 `varMap`의 변수들을 `group`별로 배열에 담아 반환한다.
+`change-detector`가 만드는 model이 이 규격의 참고 구현이다.
 
-> **`type`은 첫 이벤트 값 기준.** 이후 값 타입이 바뀌어도 갱신하지 않는다.
-> **`step`은 변수별 이벤트 순번**이지 전역 타임라인 순번이 아니다.
+```jsonc
+{
+  "groups": {                       // Global을 항상 먼저 둔다 (렌더 결정성)
+    "Global": [ { "varKey": "total@1", "varName": "total", /* ... */ "history": [ /* ... */ ] } ],
+    "Local":  [ /* ... */ ]
+  },
+  "index": { "total@1": { /* 위와 같은 객체 참조 */ } }   // render에서 빠르게 찾기 위해
+}
+```
+
+> **`type`은 첫 이벤트 값 기준**이고 이후 값 타입이 바뀌어도 갱신하지 않는다.
+> `deleted` 이벤트의 `value`는 `null`로 둔다.
+
+## 검사용 표준 픽스처
+
+`osciloscope/tool-host/fixtures/`에 5종이 JS 모듈(배열을 `export default`)로 있다.
+유효성 검사가 이 순서로 주입한다.
+
+| 픽스처 | 내용 |
+| --- | --- |
+| `normal` | Global/Local 혼재, `init`+`updated` |
+| `empty` | `[]` |
+| `deleted` | `deleted` 이벤트 포함 |
+| `recursive` | 같은 `name`, 다른 `var_id` |
+| `legacy` | `var_id`/`call_id`가 모두 `null` |
+
+`legacy`가 있는 이유는 `parseLogFile()`이 이미 구버전 호환 정규화(`?? null`)를 하고 있어
+도구도 `null`을 만날 수 있기 때문이다. `varKeyOf()`를 쓰면 자동으로 처리되지만, 키잉을 직접
+구현한 도구는 여기서 깨진다.

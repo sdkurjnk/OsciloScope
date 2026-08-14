@@ -3,6 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 사이드바도 도구 파일을 import한다(목록의 name/version을 채우기 위해, 설계문서 5.4).
+     사용자 코드를 로드하는 이상 CSP를 명시한다. {{cspSource}}는 확장이 채운다. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src {{cspSource}};
+  style-src  {{cspSource}} 'unsafe-inline';
+  img-src    {{cspSource}} data:;
+  font-src   {{cspSource}};
+  connect-src 'none';">
 <title>OsciloScope Sidebar</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -17,18 +26,22 @@
       <span class="fn" id="srcName">로그 파일 선택</span>
       <button class="src-btn" id="pickBtn" title="파일 선택">&#8943;</button>
     </div>
-    <button class="start-btn" id="startBtn" title="선택한 로그 파일 렌더링" disabled>START</button>
+    <button class="start-btn" id="startBtn" title="선택한 로그 파일을 선택한 도구로 렌더링" disabled>START</button>
   </div>
 
-  <!-- TOOLS: 분석 도구 목록 (체크박스 UI만, 동작 없음) -->
+  <!-- TOOLS: 분석 도구 목록 -->
   <div class="sbv-tools">
-    <div class="lbl">TOOLS</div>
+    <div class="lbl lbl-row">
+      <span>TOOLS</span>
+      <button class="mk-btn" id="createBtn" title="분석 도구 만들기">+ 만들기</button>
+    </div>
+    <div class="notice" id="toolNotice" hidden></div>
     <div class="tool-list" id="toolList">
       <div class="tool-empty" id="toolEmpty">불러오는 중…</div>
     </div>
   </div>
 </div>
 
-<script src="js/main.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

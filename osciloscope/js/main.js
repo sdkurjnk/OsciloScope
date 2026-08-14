@@ -2,7 +2,9 @@
 
 /**
  * main.js
- * - 앱 진입점
+ * - 메인 패널 진입점
  */
-const app = new VisualizerApp();
-app.init();
+
+import { VisualizerApp } from './VisualizerApp.js';
+
+new VisualizerApp().init();
