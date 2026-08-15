@@ -131,7 +131,15 @@ function onValidationResult(report) {
     ? (report.checks?.some(check => check.status === 'warn') ? 'warn' : 'pass')
     : 'fail';
   state.checks.set(report.toolId, status);
+
+  // 이미 선택해 둔 도구가 재검사에서 fail이 되면 선택을 푼다
+  if (status === 'fail' && state.selectedId === report.toolId) {
+    state.selectedId = null;
+    send(CommandTypes.SELECT_TOOL, { toolId: undefined });
+  }
+
   renderList();
+  syncStart();
 }
 
 function onToolError(payload) {
@@ -139,7 +147,14 @@ function onToolError(payload) {
     return;
   }
   state.checks.set(payload.toolId, 'fail');
+
+  if (state.selectedId === payload.toolId) {
+    state.selectedId = null;
+    send(CommandTypes.SELECT_TOOL, { toolId: undefined });
+  }
+
   renderList();
+  syncStart();
 }
 
 // --- 렌더 ---
@@ -173,16 +188,20 @@ function renderList() {
 
 function createRow(tool) {
   const broken = !tool.ok;
+  const failed = isFailed(tool.id);
+  // 검사에서 fail이 난 도구는 깨진 도구와 같이 취급한다. 검사가 결과 아이콘만 그리고
+  // 실행을 막지 않으면, fail을 보고도 그대로 렌더할 수 있어 검사를 신뢰할 수 없게 된다.
+  const blocked = broken || failed;
 
   const item = document.createElement('label');
-  item.className = 'tool-item' + (broken ? ' broken' : '') +
+  item.className = 'tool-item' + (blocked ? ' broken' : '') +
                    (tool.id === state.selectedId ? ' selected' : '');
 
   const radio = document.createElement('input');
   radio.type = 'radio';
   radio.name = 'osc-tool';
   radio.checked = tool.id === state.selectedId;
-  radio.disabled = broken;   // 깨진 도구는 선택할 수 없다 (설계문서 5.6)
+  radio.disabled = blocked;   // 깨진 도구·검사 실패 도구는 선택할 수 없다 (설계문서 5.6)
   radio.addEventListener('change', () => selectTool(tool.id));
   item.appendChild(radio);
 
@@ -213,10 +232,13 @@ function createRow(tool) {
   main.appendChild(line);
 
   // 설명 또는 오류 메시지. 도구가 준 문자열이라 textContent로 넣는다.
-  const sub = broken ? tool.error : tool.description;
+  const reason = broken ? tool.error
+               : failed ? '유효성 검사에 실패해 실행할 수 없습니다. 고친 뒤 다시 검사하세요.'
+               : null;
+  const sub = reason ?? tool.description;
   if (sub) {
     const subEl = document.createElement('div');
-    subEl.className = 'tool-sub' + (broken ? ' err' : '');
+    subEl.className = 'tool-sub' + (blocked ? ' err' : '');
     subEl.textContent = sub;
     main.appendChild(subEl);
   }
@@ -225,7 +247,7 @@ function createRow(tool) {
   item.appendChild(checkIcon(tool.id));
   item.appendChild(actions(tool, broken));
 
-  item.title = broken ? tool.error : (tool.description || tool.id);
+  item.title = reason ?? (tool.description || tool.id);
   return item;
 }
 
@@ -290,13 +312,30 @@ function badge(text, cls) {
 
 // --- 상태 ---
 
+function isFailed(toolId) {
+  return state.checks.get(toolId) === 'fail';
+}
+
 function selectTool(toolId) {
+  if (isFailed(toolId)) {
+    renderList();   // 라디오가 눌린 것처럼 보이는 상태를 되돌린다
+    return;
+  }
   state.selectedId = toolId;
   send(CommandTypes.SELECT_TOOL, { toolId });
   renderList();
+  syncStart();
 }
 
-/** 도구는 안 골라도 기본 도구로 떨어지므로, START는 로그 파일만 있으면 열어 준다 */
+/**
+ * START 조건: 로그 파일이 있고, 선택한 도구가 검사에서 fail이 아닐 것.
+ *
+ * 도구를 안 골랐으면 확장이 기본 도구로 떨어뜨리므로 그대로 열어 준다.
+ * 미검사(아이콘 없음) 상태까지 막지 않는 이유는 검사 결과가 세션 메모리에만 있어서다 —
+ * 사이드바를 접었다 펴면 전부 미검사로 돌아가 START가 잠긴다. 확장 쪽에 mtime과 함께
+ * 결과를 영속화한 뒤에 게이트를 넓히는 것이 맞다.
+ */
 function syncStart() {
-  el.startBtn.disabled = !state.hasLogFile;
+  const selectedFailed = state.selectedId !== null && isFailed(state.selectedId);
+  el.startBtn.disabled = !state.hasLogFile || selectedFailed;
 }

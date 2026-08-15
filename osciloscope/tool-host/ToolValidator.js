@@ -272,17 +272,27 @@ function checkCleanup(report, tool, mount, timers, fixture) {
 }
 
 function checkRenderDeterminism(report, tool, ctx, logs, fixture) {
+  // model은 한 번만 만들고 render만 2회 반복한다.
+  // draw()마다 analyze를 다시 돌리면 (1) 무거운 analyze 비용이 픽스처당 2배로 붙어
+  // 실행 시간(12번) 오탐을 만들고, (2) analyze가 비결정적일 때 이 검사가 render가 아니라
+  // analyze의 변동을 잡아 오진한다. analyze의 결정성은 7번이 따로 본다.
+  let model;
+  try {
+    model = tool.analyze(logs, ctx);
+  } catch (err) {
+    report.fail(CHECK.RENDER_DET, `재분석 중 예외가 발생했습니다: ${messageOf(err)}`, fixture);
+    return;
+  }
+
   const draw = () => {
     const container = document.createElement('div');   // 분리된 컨테이너
-    const model = tool.analyze(logs, ctx);
     tool.render(model, createHost({ mount: container, filePath: '/validation/fixture.jsonl', log: () => {} }));
+    const html = container.innerHTML;
     if (typeof tool.dispose === 'function') {
       // 두 번째 렌더가 첫 번째의 잔여 상태에 영향받지 않게 한다
-      const html = container.innerHTML;
       tool.dispose();
-      return html;
     }
-    return container.innerHTML;
+    return html;
   };
 
   let a, b;
@@ -299,9 +309,12 @@ function checkRenderDeterminism(report, tool, ctx, logs, fixture) {
     return;
   }
 
+  // 같은 model을 두 번 넘겼는데 결과가 다르다면, render가 난수·시각을 쓰거나
+  // 첫 렌더에서 model을 변형시킨 것이다. 후자는 model을 매번 새로 만들 때는 가려진다.
   report.fail(CHECK.RENDER_DET,
-    `2회 렌더 결과가 다릅니다 (첫 차이: 문자 ${firstDiff(a, b)} 부근). ` +
-    'Date.now()·Math.random()으로 만든 id나 좌표가 있는지 확인하세요.', fixture);
+    `같은 model로 2회 렌더한 결과가 다릅니다 (첫 차이: 문자 ${firstDiff(a, b)} 부근). ` +
+    'Date.now()·Math.random()으로 만든 id나 좌표가 있는지, ' +
+    'render가 model을 수정하지는 않는지 확인하세요.', fixture);
 }
 
 // ── 리포트 누적 ─────────────────────────────────────────────
