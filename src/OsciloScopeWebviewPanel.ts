@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
+import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
 
 export class OsciloScopeWebviewPanel {
 
@@ -28,9 +29,7 @@ export class OsciloScopeWebviewPanel {
         vscode.ViewColumn.One,
         {
             enableScripts: true,
-            localResourceRoots: [
-                vscode.Uri.joinPath(extensionUri, 'osciloscope')
-            ]
+            localResourceRoots: webviewResourceRoots(extensionUri)
         }
     );
 
@@ -45,7 +44,7 @@ export class OsciloScopeWebviewPanel {
         return `${attr}="${webviewUri}"`;
     });
 
-    webview.html = html;
+    webview.html = injectCspSource(html, webview);
 
     OsciloScopeWebviewPanel.panel.onDidDispose(() => {
         OsciloScopeWebviewPanel.panel = undefined as any;
@@ -54,6 +53,12 @@ export class OsciloScopeWebviewPanel {
     });
 
     OsciloScopeWebviewPanel.receiveDataFromWebview();
+    }
+
+    // 도구 파일을 메인 패널이 로드할 수 있는 URI로 바꾼다.
+    // 사이드바 기준으로 만든 URI를 여기 쓰면 로드에 실패하므로 패널마다 따로 계산해야 한다.
+    public static toWebviewUri(fileUri: vscode.Uri): string | undefined {
+        return OsciloScopeWebviewPanel.panel?.webview.asWebviewUri(fileUri).toString();
     }
 
     public static sendDataToWebview(message: OsciloScopeMessage): void {
@@ -79,9 +84,6 @@ export class OsciloScopeWebviewPanel {
                         m => OsciloScopeWebviewPanel.panel.webview.postMessage(m)
                     );
                     OsciloScopeWebviewPanel.pendingMessages = [];
-                    break;
-                case CommandTypes.VARIABLE_CHANGED:
-                    console.log('[OsciloScopeWebviewPanel] 선택된 변수 변경:', message.payload);
                     break;
             }
         });
