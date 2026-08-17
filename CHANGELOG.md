@@ -3,6 +3,39 @@
 All notable changes to the "osciloscope" extension are documented here, following
 [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-08-16
+
+### Added
+- **Analysis tool plugins.** Write custom analysis/visualization tools in
+  `.osciloscope/tools/<id>.tool.js` and pick them from the new **TOOLS** section in the
+  sidebar. A tool is handed the parsed `RawLog[]` and a DOM container; the computation
+  (`analyze`) and the presentation (`render`) are the tool's to own.
+- Standard widgets (layout, variable list, timeline) that custom tools can reuse instead
+  of drawing everything from scratch.
+- Tool scaffolding: create a tool from a skeleton, or copy a bundled tool to customize.
+  Bundled TypeScript type definitions give autocomplete and type-checking in the editor.
+- Tool validation: a blackbox 12-check suite runs each tool against standard fixtures in a
+  dedicated panel, with a timeout that reclaims tools stuck in an infinite loop.
+- Two built-in tools shipped as plugins: `change-detector` (the default — the previous
+  variables/timeline view) and `monotonic` (a from-scratch inline-SVG sparkline example).
+- User guide `docs/plugin-tools.md` (interface, lifecycle, widgets, conventions, checks,
+  limits).
+
+### Changed
+- The fixed analysis and UI moved into the default `change-detector` tool; with no tool
+  selected the behavior is unchanged.
+- Tool code runs in the webview rather than the extension host, which structurally blocks
+  `fs`/`child_process` and outbound network access. A Content-Security-Policy is applied to
+  both webviews.
+- `LogParser` now only parses logs into `RawLog[]`; grouping and per-variable history moved
+  to each tool's `analyze`.
+- Logged values are rendered with `textContent` instead of `innerHTML` to prevent HTML
+  injection from log contents.
+
+### Removed
+- Parser transforms `transformData`/`getVarKey`/`getGroupKey` (moved into the default tool).
+- The `VARIABLE_CHANGED` message command; variable selection is now internal to tools.
+
 ## [0.1.2] - 2026-08-07
 
 ### Documentation
@@ -29,6 +62,7 @@ All notable changes to the "osciloscope" extension are documented here, followin
 - Per-step value timeline with change tags (`init`, numeric `+/-` deltas, `changed`,
   `deleted`) and a call-context header (function, call id, parent call, depth).
 
+[0.2.0]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.2.0
 [0.1.2]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.1.2
 [0.1.1]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.1.1
 [0.1.0]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.1.0

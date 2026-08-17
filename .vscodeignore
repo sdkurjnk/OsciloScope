@@ -10,6 +10,9 @@ webpack.config.js
 **/eslint.config.mjs
 **/*.map
 **/*.ts
+# 사용자 워크스페이스에 배치할 타입 정의는 예외. 위 **/*.ts에 걸리면
+# 패키지에서 빠져 도구 작성 시 자동완성이 동작하지 않는다.
+!assets/templates/osciloscope-tool.d.ts
 **/.vscode-test.*
 .github/**
 .claude/**
