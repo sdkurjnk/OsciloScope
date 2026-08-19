@@ -9,6 +9,7 @@
  */
 
 import { createApiTable, CommandTypes, ToolErrorPhase } from './ApiTable.js';
+import { messageOf } from './util.js';
 import { loadToolForRun } from '../tool-host/ToolLoader.js';
 import { ToolSession } from '../tool-host/ToolHost.js';
 
@@ -122,7 +123,7 @@ export class VisualizerApp {
   // --- 실패 처리 ---
 
   _fail(toolId, phase, err) {
-    const message = err?.message ?? String(err);
+    const message = messageOf(err);
     console.error(`[VisualizerApp] 도구 실패 (${toolId} / ${phase}):`, err);
 
     this._setToolName(null);

@@ -55,12 +55,13 @@ flowchart TB
 
 아래 표는 그 엔드포인트들이 실어 나르는 커맨드·payload 명세다.
 
-> **커맨드 문자열이 두 곳에 있다.**
-> - 정본: `src/OsciloScopeMessage.ts` (`enum CommandTypes`) — 17종 전부.
-> - 웹뷰: `osciloscope/js/constants.js` — 정본을 미러링. **이제 `ApiTable.js`가 유일하게 import하고,
->   두 프론트(메인 패널·사이드바)는 `ApiTable.js`를 통해 커맨드를 받는다.**
+> **커맨드 문자열의 정본은 하나다.**
+> - 정본: `src/OsciloScopeMessage.ts` (`enum CommandTypes` · `enum ToolErrorPhase`).
+> - 웹뷰용 `osciloscope/js/constants.js`는 정본에서 **자동 생성**된다 (`scripts/gen-constants.mjs`,
+>   `npm run compile`에 포함). 직접 편집하지 말 것 — 재생성 때 덮어써진다. `ApiTable.js`가 이 파일을
+>   유일하게 import하고, 두 프론트는 `ApiTable.js`를 통해 커맨드를 받는다.
 >
-> 두 곳의 문자열 값이 일치해야 통신이 된다. 커맨드를 추가/변경하면 함께 고쳐야 한다.
+> 커맨드/페이즈를 추가·변경하면 정본만 고치고 `npm run gen:constants`(또는 compile)로 미러를 갱신한다.
 
 ## 메시지 봉투
 
@@ -202,8 +203,8 @@ sequenceDiagram
 
 ## 확장 시 유의점
 
-- **커맨드 값 2곳 일치**: 새 커맨드는 `OsciloScopeMessage.ts`(정본)와 `constants.js`에 같은
-  문자열로 반영한다.
+- **커맨드는 정본 한 곳만**: 새 커맨드/페이즈는 `OsciloScopeMessage.ts`에만 추가하고
+  `npm run gen:constants`로 `constants.js`를 재생성한다 (수동 미러 금지).
 - **웹뷰별 URI**: 도구 URI를 넘길 때는 받을 웹뷰 기준으로 `asWebviewUri`를 호출해야 한다.
   한쪽 URL을 다른 쪽에 넘기면 로드에 실패한다.
 - **`UI_READY` 핸드셰이크**: 웹뷰가 리스너를 걸기 전에 보낸 메시지는 VS Code가 버퍼링하지

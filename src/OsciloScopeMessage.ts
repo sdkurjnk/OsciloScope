@@ -1,3 +1,7 @@
+// FE↔BE 통신 커맨드의 단일 정본.
+// osciloscope/js/constants.js는 이 파일에서 자동 생성된다 (scripts/gen-constants.mjs).
+// 커맨드/페이즈를 추가·변경하면 여기만 고치고 `npm run compile`(또는 npm run gen:constants)로
+// 웹뷰용 미러를 갱신한다. constants.js를 직접 손대지 말 것 — 재생성 때 덮어써진다.
 export enum CommandTypes {
     UPDATE_ALL_DATA   = "UPDATE_ALL_DATA",   // ext → 메인 웹뷰: 원본 로그 + 실행할 도구 (UpdateAllDataPayload)
     UI_READY          = "UI_READY",
@@ -19,6 +23,14 @@ export enum CommandTypes {
     RUN_VALIDATION    = "RUN_VALIDATION",    // ext → 검사 패널: 검사 실행 지시 (RunValidationPayload)
     VALIDATION_RESULT = "VALIDATION_RESULT", // 검사 패널 → ext → sidebar webview: 검사 리포트 (ValidationReport)
     TOOL_ERROR        = "TOOL_ERROR"         // ext ↔ sidebar webview: 도구 로드/실행 실패 통지 (ToolErrorPayload)
+}
+
+// TOOL_ERROR payload의 phase. 도구 생명주기의 어느 단계에서 실패했는지 구분한다.
+// src/tool/types.ts의 ToolErrorPhase 타입이 이 값을 재노출한다.
+export enum ToolErrorPhase {
+    LOAD    = "load",
+    ANALYZE = "analyze",
+    RENDER  = "render"
 }
 
 export interface OsciloScopeMessage {

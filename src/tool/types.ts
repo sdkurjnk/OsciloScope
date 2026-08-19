@@ -97,7 +97,9 @@ export interface RunValidationPayload {
     toolUri : string;           // 검사 패널 웹뷰 기준 URI
 }
 
-export type ToolErrorPhase = 'load' | 'analyze' | 'render';
+// phase 값의 정본은 OsciloScopeMessage.ts의 enum이다. 여기서는 재노출만 한다.
+import { ToolErrorPhase } from '../OsciloScopeMessage';
+export { ToolErrorPhase };
 
 export interface ToolErrorPayload {
     toolId  : string;
