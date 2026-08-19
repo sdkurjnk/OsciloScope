@@ -112,9 +112,10 @@ interface RawLog {
 메인 패널을 여는 즉시 `sendDataToWebview`를 부르면, 프론트가 `message` 리스너를 걸기 전이라 VS Code가
 메시지를 버린다. `isReady`/`pendingMessages` 버퍼가 이 유실을 막는다.
 
-## `OsciloScopeMessage` (`src/OsciloScopeMessage.ts`)
+## 프로토콜 (`src/ApiTable.ts`)
 
-메시지 계약 타입. 커맨드 문자열의 정본이다(메인 패널 `constants.js`, 사이드바 `sidebar-view/js/main.js`와 값이 같아야 한다).
+`CommandTypes`·`OsciloScopeMessage` 봉투·payload·`ProtocolMap`·`outbound`/`route`의 단일 정본.
+웹뷰용 `constants.js`는 여기서 자동 생성된다(수동 미러 아님).
 
 ```ts
 enum CommandTypes {

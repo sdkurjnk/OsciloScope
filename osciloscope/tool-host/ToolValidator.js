@@ -13,6 +13,7 @@
 
 import { importTool } from './ToolLoader.js';
 import { createContext, createHost, shapeError, isThenable } from './ToolHost.js';
+import { messageOf } from '../js/util.js';
 
 import normal    from './fixtures/normal.js';
 import empty     from './fixtures/empty.js';
@@ -599,10 +600,6 @@ function firstDiff(a, b) {
     }
   }
   return len;
-}
-
-function messageOf(err) {
-  return err?.message ?? String(err);
 }
 
 function now() {

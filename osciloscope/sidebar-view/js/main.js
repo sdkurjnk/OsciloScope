@@ -12,12 +12,15 @@
  * 그래서 이 파일이 tool-host의 로더를 함께 쓴다.
  */
 
-import { CommandTypes } from '../../js/constants.js';
+import { createApiTable, CommandTypes } from '../../js/ApiTable.js';
 import { loadToolInfos } from '../../tool-host/ToolLoader.js';
 
 // 도구를 import하기 전에 API를 잡고 전역에서 지운다 (설계문서 3.3).
 const vscode = acquireVsCodeApi();
 delete window.acquireVsCodeApi;
+
+// 확장과의 통신은 전부 이 테이블을 거친다 (FE-API Table).
+const api = createApiTable(vscode);
 
 const el = {
   srcRow    : document.getElementById('srcRow'),
@@ -39,51 +42,33 @@ const state = {
 
 // --- 발신 ---
 
-const send = (command, payload = {}) => vscode.postMessage({ command, payload });
+el.pickBtn.addEventListener('click', () => api.selectLogFile());
+el.createBtn.addEventListener('click', () => api.createTool());
 
-el.pickBtn.addEventListener('click', () => send(CommandTypes.SELECT_LOG_FILE));
-el.createBtn.addEventListener('click', () => send(CommandTypes.CREATE_TOOL));
-
-// 선택 상태는 SELECT_TOOL로도 보내지만, START에도 실어 불일치를 없앤다 (설계문서 9.2)
+// 선택 상태는 selectTool로도 보내지만, START에도 실어 불일치를 없앤다 (설계문서 9.2)
 el.startBtn.addEventListener('click', () => {
-  send(CommandTypes.START_RENDER, { toolId: state.selectedId ?? undefined });
+  api.startRender(state.selectedId ?? undefined);
 });
 
-send(CommandTypes.GET_TOOLS_LIST);
+api.getToolsList();
 
-// --- 수신 ---
+// --- 수신 라우팅 ---
 
-window.addEventListener('message', event => {
-  const { command, payload } = event.data || {};
+api.route({
+  [CommandTypes.LOG_FILE_LOADED]: onLogFileLoaded,
+  [CommandTypes.TOOLS_LIST]:      onToolsList,
 
-  switch (command) {
-    case CommandTypes.LOG_FILE_LOADED:
-      onLogFileLoaded(payload);
-      break;
+  // 파일 감시 알림. 목록을 직접 받지 않고 다시 요청한다.
+  [CommandTypes.TOOLS_CHANGED]:   () => api.getToolsList(),
 
-    case CommandTypes.TOOLS_LIST:
-      onToolsList(payload);
-      break;
+  // 만들거나 복사한 도구를 바로 선택 상태로 둔다. 목록 자체는 감시가 갱신한다.
+  [CommandTypes.TOOL_CREATED]: payload => {
+    state.selectedId = payload?.toolId ?? state.selectedId;
+    state.checks.delete(payload?.toolId);
+  },
 
-    case CommandTypes.TOOLS_CHANGED:
-      // 파일 감시 알림. 목록을 직접 받지 않고 다시 요청한다.
-      send(CommandTypes.GET_TOOLS_LIST);
-      break;
-
-    case CommandTypes.TOOL_CREATED:
-      // 만들거나 복사한 도구를 바로 선택 상태로 둔다. 목록 자체는 감시가 갱신한다.
-      state.selectedId = payload?.toolId ?? state.selectedId;
-      state.checks.delete(payload?.toolId);
-      break;
-
-    case CommandTypes.VALIDATION_RESULT:
-      onValidationResult(payload);
-      break;
-
-    case CommandTypes.TOOL_ERROR:
-      onToolError(payload);
-      break;
-  }
+  [CommandTypes.VALIDATION_RESULT]: onValidationResult,
+  [CommandTypes.TOOL_ERROR]:        onToolError
 });
 
 function onLogFileLoaded(payload) {
@@ -135,7 +120,7 @@ function onValidationResult(report) {
   // 이미 선택해 둔 도구가 재검사에서 fail이 되면 선택을 푼다
   if (status === 'fail' && state.selectedId === report.toolId) {
     state.selectedId = null;
-    send(CommandTypes.SELECT_TOOL, { toolId: undefined });
+    api.selectTool(undefined);
   }
 
   renderList();
@@ -150,7 +135,7 @@ function onToolError(payload) {
 
   if (state.selectedId === payload.toolId) {
     state.selectedId = null;
-    send(CommandTypes.SELECT_TOOL, { toolId: undefined });
+    api.selectTool(undefined);
   }
 
   renderList();
@@ -270,18 +255,18 @@ function actions(tool, broken) {
   wrap.className = 'tool-acts';
 
   // 깨진 도구도 열 수는 있어야 한다 — 원인을 봐야 고친다
-  wrap.appendChild(actButton('✎', '파일 열기', () => send(CommandTypes.OPEN_TOOL, { toolId: tool.id })));
+  wrap.appendChild(actButton('✎', '파일 열기', () => api.openTool(tool.id)));
 
   if (tool.source === 'builtin') {
     // 번들 도구는 직접 못 고치므로 워크스페이스로 복사해서 쓴다 (설계문서 5.7)
-    wrap.appendChild(actButton('⧉', '워크스페이스로 복사', () => send(CommandTypes.COPY_TOOL, { toolId: tool.id })));
+    wrap.appendChild(actButton('⧉', '워크스페이스로 복사', () => api.copyTool(tool.id)));
   }
 
   if (!broken) {
     wrap.appendChild(actButton('✓', '유효성 검사', () => {
       state.checks.set(tool.id, 'running');
       renderList();
-      send(CommandTypes.VALIDATE_TOOL, { toolId: tool.id });
+      api.validateTool(tool.id);
     }));
   }
 
@@ -322,7 +307,7 @@ function selectTool(toolId) {
     return;
   }
   state.selectedId = toolId;
-  send(CommandTypes.SELECT_TOOL, { toolId });
+  api.selectTool(toolId);
   renderList();
   syncStart();
 }

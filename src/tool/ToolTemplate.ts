@@ -3,7 +3,6 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { ToolRegistry } from './ToolRegistry';
 import {
-    ToolCreatedPayload,
     TOOL_FILE_SUFFIX,
     TOOL_ID_PATTERN,
     TOOL_TYPES_FILE,
@@ -11,6 +10,7 @@ import {
     TOOL_TYPES_VERSION,
     USER_TOOLS_DIR
 } from './types';
+import { ToolCreatedPayload } from '../ApiTable';
 
 const SKELETON_FILE = 'tool-skeleton.js';
 const TOOL_ID_TOKEN = /\{\{TOOL_ID\}\}/g;
@@ -202,8 +202,13 @@ export class ToolTemplate {
     }
 
     // 복사본이 원본과 같은 id를 쓰면 재정의로 취급되어 헷갈린다. meta.id만 새 값으로 바꾼다.
+    // meta 객체 범위(meta: { ... }) 안의 id만 잡는다. 예전엔 파일의 첫 `id:`를 바꿔서
+    // analyze 코드 등 meta 밖의 무관한 id를 건드릴 위험이 있었다.
     private replaceMetaId(body: string, toolId: string): string {
-        return body.replace(/(\bid\s*:\s*)(['"`])[^'"`]*\2/, `$1$2${toolId}$2`);
+        return body.replace(
+            /(\bmeta\s*:\s*\{[^}]*?\bid\s*:\s*)(['"`])[^'"`]*\2/,
+            `$1$2${toolId}$2`
+        );
     }
 
     private async openInEditor(filePath: string): Promise<void> {

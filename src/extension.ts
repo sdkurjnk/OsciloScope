@@ -3,12 +3,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { LogParser } from './LogParser';
 import { OsciloScopeWebviewPanel } from './OsciloScopeWebviewPanel';
-import { CommandTypes } from './OsciloScopeMessage';
+import { outbound, UpdateAllDataPayload } from './ApiTable';
 import { SidebarProvider } from './SidebarProvider';
 import { ToolRegistry } from './tool/ToolRegistry';
 import { ToolTemplate } from './tool/ToolTemplate';
 import { ValidationPanel } from './tool/ValidationPanel';
-import { DEFAULT_TOOL_ID, UpdateAllDataPayload } from './tool/types';
+import { DEFAULT_TOOL_ID } from './tool/types';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('[ExtensionManager] OsciloScope Extension 시작!');
@@ -19,6 +19,10 @@ export function activate(context: vscode.ExtensionContext) {
     const toolRegistry = new ToolRegistry(context.extensionUri);
     const toolTemplate = new ToolTemplate(context.extensionUri, toolRegistry, output);
     const validation   = new ValidationPanel(context.extensionUri, toolRegistry, output);
+
+    // 메인 패널로 보내는 발신은 전부 이 테이블을 거친다 (BE-API Table).
+    // sendDataToWebview가 UI_READY 전 메시지 버퍼링·패널 부재 처리를 맡는다.
+    const panelApi = outbound(message => OsciloScopeWebviewPanel.sendDataToWebview(message));
 
     // 기존 커맨드 안에 있던 로직을 재사용 가능한 함수로 분리
     // (사이드바에서 파일 선택했을 때도 동일한 로직을 타야 하므로)
@@ -36,10 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         // 메인 패널 헤더(#hdrPath)에 선택 파일 경로 표시.
         // (UI_READY 전이면 sendDataToWebview가 버퍼링 후 flush)
-        OsciloScopeWebviewPanel.sendDataToWebview({
-            command: CommandTypes.LOG_FILE_LOADED,
-            payload: { fileName: path.basename(logPath), filePath: logPath }
-        });
+        panelApi.logFileLoaded({ fileName: path.basename(logPath), filePath: logPath });
 
         // 실행할 도구를 정한다. 고르지 않았으면 기본 도구로 떨어진다.
         const toolId = selectedToolId ?? DEFAULT_TOOL_ID;
@@ -65,10 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
             tool     : { id: tool.id, uri: toolUri }
         };
 
-        OsciloScopeWebviewPanel.sendDataToWebview({
-            command: CommandTypes.UPDATE_ALL_DATA,
-            payload
-        });
+        panelApi.updateAllData(payload);
     };
 
     // 사이드바 웹뷰 프로바이더 등록 (파일 선택 단일 진입점)
