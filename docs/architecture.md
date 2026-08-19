@@ -52,10 +52,10 @@ extension.ts               진입점. 프로바이더 등록 + loadLogFile 조�
 ├─ SidebarProvider.ts      사이드바 웹뷰 뷰. 파일 선택·START·도구 목록·관리 액션 처리
 ├─ LogParser.ts            로그 파일을 RawLog[]로 읽기만 한다 (가공하지 않음)
 ├─ OsciloScopeWebviewPanel.ts   메인 패널 생성/표시/메시지 브릿지 (정적 싱글턴)
-├─ OsciloScopeMessage.ts   메시지 타입(CommandTypes)과 인터페이스 정의
+├─ ApiTable.ts             프로토콜 단일 정본(CommandTypes·payload·ProtocolMap) + BE 송·수신
 ├─ WebviewSupport.ts       두 웹뷰가 공유하는 localResourceRoots·CSP 주입
 └─ tool/
-   ├─ types.ts             프로토콜 타입 + 경로·패턴 상수
+   ├─ types.ts             도구 도메인 타입(ToolInfo·검사) + 경로·패턴 상수
    ├─ ToolRegistry.ts      도구 파일 스캔·감시 (멀티루트·신뢰 처리)
    ├─ ToolTemplate.ts      스켈레톤 생성 · d.ts 배치 · 기본 도구 복사
    └─ ValidationPanel.ts   검사 전용 임시 패널 + 타임아웃 강제 종료

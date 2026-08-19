@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
-import { route } from './ApiTable';
+import { route, OsciloScopeMessage, CommandTypes } from './ApiTable';
 import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
 
 export class OsciloScopeWebviewPanel {

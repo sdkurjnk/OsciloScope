@@ -2,8 +2,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { CommandTypes, OsciloScopeMessage } from '../OsciloScopeMessage';
-import { outbound, route } from '../ApiTable';
+import { outbound, route, CommandTypes, OsciloScopeMessage } from '../ApiTable';
 import { webviewResourceRoots } from '../WebviewSupport';
 import { ToolRegistry } from './ToolRegistry';
 import {

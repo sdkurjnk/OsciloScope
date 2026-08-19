@@ -3,12 +3,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { LogParser } from './LogParser';
 import { OsciloScopeWebviewPanel } from './OsciloScopeWebviewPanel';
-import { outbound } from './ApiTable';
+import { outbound, UpdateAllDataPayload } from './ApiTable';
 import { SidebarProvider } from './SidebarProvider';
 import { ToolRegistry } from './tool/ToolRegistry';
 import { ToolTemplate } from './tool/ToolTemplate';
 import { ValidationPanel } from './tool/ValidationPanel';
-import { DEFAULT_TOOL_ID, UpdateAllDataPayload } from './tool/types';
+import { DEFAULT_TOOL_ID } from './tool/types';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('[ExtensionManager] OsciloScope Extension 시작!');

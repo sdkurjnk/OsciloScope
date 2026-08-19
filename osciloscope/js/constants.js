@@ -2,7 +2,7 @@
 
 /**
  * ⚠ AUTO-GENERATED — 편집하지 마세요.
- * 정본: src/OsciloScopeMessage.ts. 재생성: npm run gen:constants (npm run compile에 포함).
+ * 정본: src/ApiTable.ts. 재생성: npm run gen:constants (npm run compile에 포함).
  *
  * 웹뷰는 raw ESM이라 TypeScript를 import할 수 없어, 정본 enum의 문자열 값만 여기로 미러한다.
  * ApiTable.js가 이 파일을 유일하게 import한다.

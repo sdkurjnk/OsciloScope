@@ -1,5 +1,3 @@
-import { RawLog } from '../LogParser';
-
 // 도구 파일명 규칙: <id>.tool.js — 로더/스캐너는 이 패턴에 맞는 파일만 도구로 인식한다.
 export const TOOL_FILE_SUFFIX = '.tool.js';
 
@@ -43,69 +41,8 @@ export interface ToolInfo {
     error     ?: string;        // 확장 단계에서 이미 실패 (ID 중복, 형식 위반 등)
 }
 
-export interface ToolsListPayload {
-    tools          : ToolInfo[];
-    trusted        : boolean;   // vscode.workspace.isTrusted — false면 사용자 도구 미로드
-    workspaceReady : boolean;   // 워크스페이스 유무 — false면 '만들기' 비활성
-}
-
-// UPDATE_ALL_DATA에 실리는 도구 참조.
-// 주의: uri는 메인 패널 웹뷰 기준으로 계산해야 한다. ToolInfo.uri(사이드바 기준)를 재사용하면 로드 실패.
-export interface ToolRef {
-    id  : string;
-    uri : string;
-}
-
-export interface UpdateAllDataPayload {
-    filePath : string;
-    rawLogs  : RawLog[];        // 파싱만 한 원본. 가공은 도구의 analyze()가 담당
-    tool     : ToolRef;
-}
-
-export interface LogFileLoadedPayload {
-    fileName : string;
-    filePath : string;
-}
-
-export interface StartRenderPayload {
-    toolId : string;
-}
-
-export interface SelectToolPayload {
-    toolId : string;
-}
-
-export interface CopyToolPayload {
-    toolId : string;
-}
-
-export interface OpenToolPayload {
-    toolId : string;
-}
-
-export interface ValidateToolPayload {
-    toolId : string;
-}
-
-export interface ToolCreatedPayload {
-    toolId   : string;
-    filePath : string;
-}
-
-export interface RunValidationPayload {
-    toolId  : string;
-    toolUri : string;           // 검사 패널 웹뷰 기준 URI
-}
-
-// phase 값의 정본은 OsciloScopeMessage.ts의 enum이다. 여기서는 재노출만 한다.
-import { ToolErrorPhase } from '../OsciloScopeMessage';
-export { ToolErrorPhase };
-
-export interface ToolErrorPayload {
-    toolId  : string;
-    message : string;
-    phase   : ToolErrorPhase;
-}
+// 메시지 payload(ToolsListPayload·UpdateAllDataPayload·ToolErrorPayload 등)와 ToolErrorPhase는
+// 프로토콜 정의라서 src/ApiTable.ts로 옮겼다. 여기에는 도구 도메인 타입만 남긴다.
 
 // --- 유효성 검사 ---
 

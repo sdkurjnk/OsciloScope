@@ -13,7 +13,7 @@ export const CommandTypes = Object.freeze({ /* 17종 */ });
 export const ToolErrorPhase = Object.freeze({ LOAD: 'load', ANALYZE: 'analyze', RENDER: 'render' });
 ```
 
-`src/OsciloScopeMessage.ts`가 정본이고 문자열 값이 같아야 한다. 사이드바 뷰도 이 파일을 import한다.
+`src/ApiTable.ts`가 정본이고, `constants.js`는 거기서 자동 생성된다(수동 미러 금지). 두 프론트는 `ApiTable.js`를 통해 커맨드를 쓴다.
 전체 목록은 [message-protocol.md](./message-protocol.md).
 
 ## `tool-host/ToolHost.js`

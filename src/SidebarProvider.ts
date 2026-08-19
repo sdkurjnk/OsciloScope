@@ -1,13 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
-import { outbound, route } from './ApiTable';
+import { outbound, route, OsciloScopeMessage, CommandTypes, StartRenderPayload } from './ApiTable';
 import { ToolRegistry } from './tool/ToolRegistry';
 import { ToolTemplate } from './tool/ToolTemplate';
 import { ValidationPanel } from './tool/ValidationPanel';
 import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
-import { StartRenderPayload } from './tool/types';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 

@@ -3,7 +3,6 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { ToolRegistry } from './ToolRegistry';
 import {
-    ToolCreatedPayload,
     TOOL_FILE_SUFFIX,
     TOOL_ID_PATTERN,
     TOOL_TYPES_FILE,
@@ -11,6 +10,7 @@ import {
     TOOL_TYPES_VERSION,
     USER_TOOLS_DIR
 } from './types';
+import { ToolCreatedPayload } from '../ApiTable';
 
 const SKELETON_FILE = 'tool-skeleton.js';
 const TOOL_ID_TOKEN = /\{\{TOOL_ID\}\}/g;
