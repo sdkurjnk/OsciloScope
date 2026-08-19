@@ -34,17 +34,28 @@ export function createApiTable(vscode) {
 
   return {
     // ── 발신: webview → ext (전부 ext로 보냄) ──────────────
-    uiReady          : ()        => send(CommandTypes.UI_READY),                   // 프론트 준비 완료 신호
-    toolError        : (payload) => send(CommandTypes.TOOL_ERROR, payload),        // 도구 로드/실행 실패 통지 { toolId, message, phase }
-    selectLogFile    : ()        => send(CommandTypes.SELECT_LOG_FILE),            // 로그 파일 선택 요청
-    startRender      : (toolId)  => send(CommandTypes.START_RENDER, { toolId }),   // 선택 도구로 렌더 시작 요청
-    getToolsList     : ()        => send(CommandTypes.GET_TOOLS_LIST),             // 도구 목록 요청
-    selectTool       : (toolId)  => send(CommandTypes.SELECT_TOOL, { toolId }),    // 선택한 도구 id 통지
-    createTool       : ()        => send(CommandTypes.CREATE_TOOL),                // 스켈레톤 도구 생성 요청
-    copyTool         : (toolId)  => send(CommandTypes.COPY_TOOL, { toolId }),      // 번들 도구 복사 요청
-    openTool         : (toolId)  => send(CommandTypes.OPEN_TOOL, { toolId }),      // 도구 파일 열기 요청
-    validateTool     : (toolId)  => send(CommandTypes.VALIDATE_TOOL, { toolId }),  // 유효성 검사 실행 요청
-    validationResult : (report)  => send(CommandTypes.VALIDATION_RESULT, report),  // 검사 리포트 회신(검사패널)
+    uiReady          : ()        => send(CommandTypes.UI_READY),
+    // 프론트 준비 완료 신호
+    toolError        : (payload) => send(CommandTypes.TOOL_ERROR, payload),
+    // 도구 로드/실행 실패 통지 { toolId, message, phase }
+    selectLogFile    : ()        => send(CommandTypes.SELECT_LOG_FILE),
+    // 로그 파일 선택 요청
+    startRender      : (toolId)  => send(CommandTypes.START_RENDER, { toolId }),
+    // 선택 도구로 렌더 시작 요청
+    getToolsList     : ()        => send(CommandTypes.GET_TOOLS_LIST),
+    // 도구 목록 요청
+    selectTool       : (toolId)  => send(CommandTypes.SELECT_TOOL, { toolId }),
+    // 선택한 도구 id 통지
+    createTool       : ()        => send(CommandTypes.CREATE_TOOL),
+    // 스켈레톤 도구 생성 요청
+    copyTool         : (toolId)  => send(CommandTypes.COPY_TOOL, { toolId }),
+    // 번들 도구 복사 요청
+    openTool         : (toolId)  => send(CommandTypes.OPEN_TOOL, { toolId }),
+    // 도구 파일 열기 요청
+    validateTool     : (toolId)  => send(CommandTypes.VALIDATE_TOOL, { toolId }),
+    // 유효성 검사 실행 요청
+    validationResult : (report)  => send(CommandTypes.VALIDATION_RESULT, report),
+    // 검사 리포트 회신(검사패널)
 
     /**
      * ── 수신 라우팅: ext → webview ───────────────────────
