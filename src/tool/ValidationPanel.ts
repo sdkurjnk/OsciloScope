@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { CommandTypes, OsciloScopeMessage } from '../OsciloScopeMessage';
+import { outbound, route } from '../ApiTable';
 import { webviewResourceRoots } from '../WebviewSupport';
 import { ToolRegistry } from './ToolRegistry';
 import {
@@ -82,23 +83,17 @@ export class ValidationPanel {
                 panel.dispose();
             }, VALIDATION_TIMEOUT_MS);
 
-            panel.webview.onDidReceiveMessage((message: OsciloScopeMessage) => {
-                switch (message.command) {
-                    case CommandTypes.UI_READY:
-                        // 검사기가 리스너를 걸기 전에 보내면 유실되므로 UI_READY를 기다린다.
-                        panel.webview.postMessage({
-                            command: CommandTypes.RUN_VALIDATION,
-                            payload: {
-                                toolId,
-                                toolUri: panel.webview.asWebviewUri(toolFileUri).toString()
-                            }
-                        });
-                        break;
-                    case CommandTypes.VALIDATION_RESULT:
-                        finish(message.payload as ValidationReport);
-                        break;
-                }
-            });
+            // 검사 패널로 보내는 발신은 이 테이블을 거친다 (BE-API Table).
+            const api = outbound(message => panel.webview.postMessage(message));
+
+            panel.webview.onDidReceiveMessage((message: OsciloScopeMessage) => route(message, {
+                // 검사기가 리스너를 걸기 전에 보내면 유실되므로 UI_READY를 기다린다.
+                [CommandTypes.UI_READY]: () => api.runValidation({
+                    toolId,
+                    toolUri: panel.webview.asWebviewUri(toolFileUri).toString()
+                }),
+                [CommandTypes.VALIDATION_RESULT]: payload => finish(payload as ValidationReport)
+            }));
 
             // 사용자가 검사 패널을 직접 닫는 경우도 결과 없이 끝난다.
             panel.onDidDispose(() => finish(this.aborted(toolId)));
@@ -112,6 +107,10 @@ export class ValidationPanel {
     private shell(webview: vscode.Webview, validatorPath: string): string {
         const nonce        = this.nonce();
         const validatorUri = webview.asWebviewUri(vscode.Uri.file(validatorPath));
+        // 검사 패널도 FE-API Table을 거쳐 확장과 통신한다 (커맨드 문자열을 인라인에 두지 않는다).
+        const apiTableUri  = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.extensionUri, 'osciloscope', 'js', 'ApiTable.js')
+        );
 
         return `<!DOCTYPE html>
 <html lang="ko">
@@ -130,28 +129,27 @@ export class ValidationPanel {
 <p>도구를 검사하는 중입니다…</p>
 <script type="module" nonce="${nonce}">
 import { runValidation } from '${validatorUri}';
+import { createApiTable, CommandTypes } from '${apiTableUri}';
 
-const vscode = acquireVsCodeApi();
+const api = createApiTable(acquireVsCodeApi());
 
-window.addEventListener('message', async (event) => {
-    const { command, payload } = event.data;
-    if (command !== 'RUN_VALIDATION') {
-        return;
+api.route({
+    [CommandTypes.RUN_VALIDATION]: async (payload) => {
+        let report;
+        try {
+            report = await runValidation(payload);
+        } catch (err) {
+            report = {
+                toolId: payload.toolId,
+                ok: false,
+                checks: [{ name: '로드', status: 'fail', message: String(err && err.message || err) }]
+            };
+        }
+        api.validationResult(report);
     }
-    let report;
-    try {
-        report = await runValidation(payload);
-    } catch (err) {
-        report = {
-            toolId: payload.toolId,
-            ok: false,
-            checks: [{ name: '로드', status: 'fail', message: String(err && err.message || err) }]
-        };
-    }
-    vscode.postMessage({ command: 'VALIDATION_RESULT', payload: report });
 });
 
-vscode.postMessage({ command: 'UI_READY', payload: {} });
+api.uiReady();
 </script>
 </body>
 </html>`;
