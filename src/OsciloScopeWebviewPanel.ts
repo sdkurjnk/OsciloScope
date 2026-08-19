@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { OsciloScopeMessage, CommandTypes } from './OsciloScopeMessage';
+import { route, OsciloScopeMessage, CommandTypes } from './ApiTable';
 import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
 
 export class OsciloScopeWebviewPanel {
@@ -75,17 +75,17 @@ export class OsciloScopeWebviewPanel {
     }
 
     public static receiveDataFromWebview(): void {
-        OsciloScopeWebviewPanel.panel.webview.onDidReceiveMessage((message: OsciloScopeMessage) => {
-            switch (message.command) {
-                case CommandTypes.UI_READY:
+        OsciloScopeWebviewPanel.panel.webview.onDidReceiveMessage((message: OsciloScopeMessage) =>
+            route(message, {
+                [CommandTypes.UI_READY]: () => {
                     console.log('[OsciloScopeWebviewPanel] 프론트 로딩 완료!');
                     OsciloScopeWebviewPanel.isReady = true;
                     OsciloScopeWebviewPanel.pendingMessages.forEach(
                         m => OsciloScopeWebviewPanel.panel.webview.postMessage(m)
                     );
                     OsciloScopeWebviewPanel.pendingMessages = [];
-                    break;
-            }
-        });
+                }
+            })
+        );
     }
 }

@@ -4,12 +4,12 @@ import * as vscode from 'vscode';
 import {
     ToolInfo,
     ToolSource,
-    ToolsListPayload,
     TOOL_FILE_SUFFIX,
     TOOL_ID_PATTERN,
     USER_TOOLS_DIR,
     BUILTIN_TOOLS_DIR
 } from './types';
+import { ToolsListPayload } from '../ApiTable';
 
 // 스캔 결과의 확장 호스트 내부 표현.
 // ToolInfo와 달리 파일 URI를 그대로 들고 있다. asWebviewUri는 웹뷰마다 결과가 다르므로

@@ -8,7 +8,8 @@
  * 도구가 하고, 여기는 도구를 불러와 생명주기를 돌리는 역할만 한다 (설계문서 4.5).
  */
 
-import { CommandTypes, ToolErrorPhase } from './constants.js';
+import { createApiTable, CommandTypes, ToolErrorPhase } from './ApiTable.js';
+import { messageOf } from './util.js';
 import { loadToolForRun } from '../tool-host/ToolLoader.js';
 import { ToolSession } from '../tool-host/ToolHost.js';
 
@@ -22,38 +23,31 @@ export class VisualizerApp {
       delete window.acquireVsCodeApi;
     }
 
+    // 확장과의 통신은 전부 이 테이블을 거친다 (FE-API Table).
+    this._api = createApiTable(this._vscode);
+
     this._session  = null;   // 현재 실행 중인 ToolSession
     this._filePath = '';
     this._runSeq   = 0;      // 늦게 도착한 이전 실행을 무시하기 위한 순번
   }
 
   init() {
-    window.addEventListener('message', event => this._onMessage(event.data));
+    // 수신 라우팅을 테이블에 등록한다 (command → handler).
+    this._api.route({
+      [CommandTypes.LOG_FILE_LOADED]: payload => {
+        const { filePath } = payload;
+        if (filePath) {
+          this._filePath = filePath;
+          this._setPath(filePath);
+        }
+      },
+      // await를 기다리지 않는다. 핸들러를 붙잡고 있으면 그 사이 도착한 메시지가
+      // 밀리기 때문. 순번(_runSeq)으로 경쟁만 정리한다.
+      [CommandTypes.UPDATE_ALL_DATA]: payload => this._run(payload)
+    });
+
     this._setStatus('로드 중', 'loading');
-    this._send({ command: CommandTypes.UI_READY, payload: {} });
-  }
-
-  // --- 수신 ---
-
-  _onMessage(message) {
-    if (!message || !message.command) {
-      return;
-    }
-
-    if (message.command === CommandTypes.LOG_FILE_LOADED) {
-      const { filePath } = message.payload || {};
-      if (filePath) {
-        this._filePath = filePath;
-        this._setPath(filePath);
-      }
-      return;
-    }
-
-    if (message.command === CommandTypes.UPDATE_ALL_DATA) {
-      // await를 기다리지 않는다. 메시지 핸들러를 붙잡고 있으면 그 사이 도착한
-      // 메시지가 밀리기 때문. 순번(_runSeq)으로 경쟁만 정리한다.
-      this._run(message.payload || {});
-    }
+    this._api.uiReady();
   }
 
   // --- 실행 ---
@@ -129,17 +123,14 @@ export class VisualizerApp {
   // --- 실패 처리 ---
 
   _fail(toolId, phase, err) {
-    const message = err?.message ?? String(err);
+    const message = messageOf(err);
     console.error(`[VisualizerApp] 도구 실패 (${toolId} / ${phase}):`, err);
 
     this._setToolName(null);
     this._setStatus('실행 실패', 'error');
     this._renderError(phase, message);
 
-    this._send({
-      command: CommandTypes.TOOL_ERROR,
-      payload: { toolId, message, phase }
-    });
+    this._api.toolError({ toolId, message, phase });
   }
 
   _renderError(phase, message) {
@@ -173,15 +164,7 @@ export class VisualizerApp {
     mount.appendChild(box);
   }
 
-  // --- 발신 · DOM ---
-
-  _send(message) {
-    if (this._vscode) {
-      this._vscode.postMessage(message);
-    } else {
-      console.log('[OsciloScope → Backend]', message);
-    }
-  }
+  // --- DOM ---
 
   _mount() {
     return document.getElementById('pluginRoot');

@@ -9,11 +9,59 @@ Extension Host와 Webview는 `postMessage`로만 통신한다.
 - **사이드바 뷰** `osciloscope/sidebar-view/` ↔ `SidebarProvider`
 - **검사 패널** (임시) ↔ `ValidationPanel`
 
-> **커맨드 문자열이 두 곳에 있다.**
-> - 정본: `src/OsciloScopeMessage.ts` (`enum CommandTypes`) — 17종 전부.
-> - 웹뷰: `osciloscope/js/constants.js` — 정본을 미러링. **사이드바 뷰도 이 파일을 import한다.**
+## API 테이블 (단일 통신 창구)
+
+세 통신선의 `postMessage`/`onmessage`는 화면·핸들러 코드에 흩어져 있지 않고 **양쪽의 API
+테이블 한 곳으로 모인다.** 호출부는 raw 메시지(`{ command, payload }`)를 만들지 않고 이름 붙은
+엔드포인트 함수를 부른다.
+
+```mermaid
+flowchart TB
+    subgraph WV["웹뷰 (프론트)"]
+        SB["SideBar<br/>sidebar-view/js/main.js"]
+        TOOL["Tool (Plug-in)<br/>*.tool.js"]
+        DOM["DOM"]
+    end
+
+    FEAPI["FE-API Table<br/>osciloscope/js/ApiTable.js"]
+    BEAPI["BE-API Table<br/>src/ApiTable.ts"]
+
+    subgraph BEMOD["확장 호스트 (백엔드 처리 모듈)"]
+        LOG["LogParser<br/>로그 파싱·렌더"]
+        REG["ToolRegistry / ToolTemplate<br/>도구 관리"]
+        VAL["ValidationPanel<br/>검사"]
+    end
+
+    SB <--> FEAPI
+    TOOL -. "host 계약 (analyze/render, 메시지 아님)" .-> DOM
+    SB --> DOM
+    FEAPI <-->|postMessage| BEAPI
+    BEAPI --> LOG
+    BEAPI --> REG
+    BEAPI --> VAL
+```
+
+> **Tool은 FE-API Table을 거치지 않는다.** 도구는 `analyze/render/host` 계약으로만 동작하고
+> `acquireVsCodeApi`는 진입점이 회수하므로 확장과 직접 통신할 수 없다 (§3.3). 위 그림의 점선은
+> "도구가 FE가 준 host API로 DOM을 그린다"는 뜻이지 메시지 통신선이 아니다.
+
+- **FE-API Table** — `osciloscope/js/ApiTable.js`. `createApiTable(vscode)` → 발신 엔드포인트
+  (`uiReady()`, `selectLogFile()`, …) + 수신 라우팅 `route({ [command]: handler })`.
+  SideBar와 메인 패널이 쓴다. **Tool(플러그인)은 쓰지 않는다** — 도구는 `analyze/render/host`
+  계약으로만 동작하고 `acquireVsCodeApi`는 진입점이 회수한다 (§3.3).
+- **BE-API Table** — `src/ApiTable.ts`. `outbound(post)` → 발신 엔드포인트(`updateAllData()`,
+  `toolsList()`, …), `route(message, handlers)` → 수신 라우팅. 세 채널이 자기 전송 함수를
+  `outbound`에 bind해 쓰고, 실제 처리(로그 파싱·도구 관리·검사)는 뒤의 모듈이 맡는다.
+
+아래 표는 그 엔드포인트들이 실어 나르는 커맨드·payload 명세다.
+
+> **커맨드 문자열의 정본은 하나다.**
+> - 정본: `src/ApiTable.ts` (`enum CommandTypes` · `enum ToolErrorPhase`).
+> - 웹뷰용 `osciloscope/js/constants.js`는 정본에서 **자동 생성**된다 (`scripts/gen-constants.mjs`,
+>   `npm run compile`에 포함). 직접 편집하지 말 것 — 재생성 때 덮어써진다. `ApiTable.js`가 이 파일을
+>   유일하게 import하고, 두 프론트는 `ApiTable.js`를 통해 커맨드를 받는다.
 >
-> 두 곳의 문자열 값이 일치해야 통신이 된다. 커맨드를 추가/변경하면 함께 고쳐야 한다.
+> 커맨드/페이즈를 추가·변경하면 정본만 고치고 `npm run gen:constants`(또는 compile)로 미러를 갱신한다.
 
 ## 메시지 봉투
 
@@ -23,6 +71,11 @@ interface OsciloScopeMessage {
   payload : Object;
 }
 ```
+
+`OsciloScopeMessage`는 전선 위의 느슨한 봉투다. 커맨드별 payload 타입은 `src/ApiTable.ts`의
+**`ProtocolMap`** 한 곳에 묶여 있고, `outbound`(발신)와 `route`(수신)가 이 맵을 따라 타입을
+맞춘다. 그래서 payload 인터페이스(`src/ApiTable.ts`)를 고치면 관련 송·수신부에 **컴파일 에러**가
+떠서 고칠 곳을 놓치지 않고, 수신 핸들러는 payload 타입을 자동으로 받아 캐스팅이 필요 없다.
 
 ## 메인 패널 ↔ Extension Host
 
@@ -140,18 +193,30 @@ sequenceDiagram
 
 ## 브릿지 구현 위치
 
-- **메인 패널 송신**: `OsciloScopeWebviewPanel.sendDataToWebview` — 패널 없으면 에러 로그 후 무시.
-  `UI_READY` 이전 메시지는 `pendingMessages`에 버퍼링했다가 flush.
-- **메인 패널 수신**: `OsciloScopeWebviewPanel.receiveDataFromWebview` — `createOrShow` 시 1회 등록.
-- **사이드바 송수신**: `SidebarProvider.resolveWebviewView`의 `onDidReceiveMessage` + `postMessage`.
-- **검사 패널**: `ValidationPanel`이 껍데기 HTML을 만들고 `runValidation`의 결과를 기다린다.
-  15초 안에 안 오면 패널을 `dispose`하고 실패 리포트를 만든다.
-- **프론트 송수신**: 메인 패널 `VisualizerApp`, 사이드바 `sidebar-view/js/main.js`.
+모든 채널이 API 테이블(`src/ApiTable.ts` · `osciloscope/js/ApiTable.js`)을 거친다.
+
+- **메인 패널 송신**: `extension.ts`가 `outbound(m => OsciloScopeWebviewPanel.sendDataToWebview(m))`로
+  발신. `sendDataToWebview`는 패널 부재 시 무시하고, `UI_READY` 이전 메시지는 `pendingMessages`에
+  버퍼링했다가 flush.
+- **메인 패널 수신**: `OsciloScopeWebviewPanel.receiveDataFromWebview`가 `route`로 라우팅
+  (`createOrShow` 시 1회 등록).
+- **사이드바 송수신**: `SidebarProvider`가 `outbound`(필드 `api`)로 발신, `route`로 수신.
+- **검사 패널**: `ValidationPanel`이 껍데기 HTML을 만들고, 인라인 셸도 FE-API Table을 import해
+  통신한다. `runValidation` 결과를 15초까지 기다리고, 초과하면 `dispose` 후 실패 리포트.
+- **프론트 송수신**: 메인 패널 `VisualizerApp`(`this._api`), 사이드바 `sidebar-view/js/main.js`(`api`).
+  둘 다 `createApiTable`로 테이블을 만들어 발신·`route` 수신.
 
 ## 확장 시 유의점
 
-- **커맨드 값 2곳 일치**: 새 커맨드는 `OsciloScopeMessage.ts`(정본)와 `constants.js`에 같은
-  문자열로 반영한다.
+- **프로토콜은 한 파일**: 커맨드·페이즈·payload·`ProtocolMap`이 전부 `src/ApiTable.ts`에 있다.
+  커맨드/페이즈를 바꾸면 `npm run gen:constants`로 `constants.js`를 재생성한다 (수동 미러 금지).
+
+### 새 커맨드 추가 절차
+
+1. `src/ApiTable.ts`의 `CommandTypes`에 커맨드를 추가한다 (constants.js는 빌드가 생성).
+2. 같은 파일에 payload 인터페이스를 정의하고 `ProtocolMap`에 `커맨드 → payload`를 연결한다.
+3. 발신이 필요하면 `outbound`에 엔드포인트 한 줄, 프론트는 `ApiTable.js`에 대응 엔드포인트를 추가한다.
+4. 수신 쪽 `route({ [커맨드]: 핸들러 })`에 핸들러를 건다 — payload 타입은 자동으로 따라온다.
 - **웹뷰별 URI**: 도구 URI를 넘길 때는 받을 웹뷰 기준으로 `asWebviewUri`를 호출해야 한다.
   한쪽 URL을 다른 쪽에 넘기면 로드에 실패한다.
 - **`UI_READY` 핸드셰이크**: 웹뷰가 리스너를 걸기 전에 보낸 메시지는 VS Code가 버퍼링하지

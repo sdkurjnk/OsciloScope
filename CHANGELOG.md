@@ -3,6 +3,19 @@
 All notable changes to the "osciloscope" extension are documented here, following
 [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-08-19
+
+### Changed
+- **FE/BE messaging consolidated into a single `ApiTable`.** Command strings are now
+  single-sourced and each API is tied to its payload via a `ProtocolMap`, removing the
+  duplicated protocol definitions that were spread across the extension host and webviews.
+- Frontend constants are generated from the shared source (`scripts/gen-constants.mjs`) so
+  the two sides can no longer drift apart. No user-facing behavior changes.
+
+### Documentation
+- Annotate each API in the message-protocol reference with its direction and payload.
+- Embed a component-map overview diagram in the architecture doc.
+
 ## [0.2.0] - 2026-08-16
 
 ### Added
@@ -62,6 +75,7 @@ All notable changes to the "osciloscope" extension are documented here, followin
 - Per-step value timeline with change tags (`init`, numeric `+/-` deltas, `changed`,
   `deleted`) and a call-context header (function, call id, parent call, depth).
 
+[0.2.1]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.2.1
 [0.2.0]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.2.0
 [0.1.2]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.1.2
 [0.1.1]: https://github.com/sdkurjnk/OsciloScope/releases/tag/v0.1.1

@@ -10,6 +10,7 @@
  */
 
 import { shapeError } from './ToolHost.js';
+import { messageOf } from '../js/util.js';
 
 /**
  * 도구 모듈을 불러온다.
@@ -105,8 +106,4 @@ export async function loadToolForRun(uri, mtime, expectedId) {
     throw new Error(problem);
   }
   return tool;
-}
-
-function messageOf(err) {
-  return err?.message ?? String(err);
 }
