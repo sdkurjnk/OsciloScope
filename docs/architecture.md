@@ -1,5 +1,36 @@
 # 아키텍처
 
+## 한눈에 보기
+
+<p align="center">
+  <img src="./assets/Architecture.png" alt="아키텍처 컴포넌트 맵" width="480">
+</p>
+
+위 그림은 주 렌더 경로(**파일·도구 선택 → 로그 파싱 → 메인 패널에 도구가 렌더**)에 실제로 관여하는
+핵심 컴포넌트만 추린 것이다. 크게 세 층으로 읽는다.
+
+- **웹뷰(프론트, 노란색)** — 위쪽. 왼쪽 `SideBar`는 파일·도구 선택 창구, 오른쪽은 메인 패널이다.
+  메인 패널에서는 `VisualizerApp`이 `ToolLoader`로 도구를 불러와 `ToolHost`(ToolSession)에 넘기고,
+  `ToolHost`가 도구의 `analyze/render`를 호출하면 **`Tool`이 `DOM`에 그림**을 그린다.
+- **API Table 두 층 + `PostMessage`** — 가운데. 웹뷰는 `API Table/FE`, 확장은 `API Table/BE`라는
+  단일 창구만 거쳐 통신한다. 바깥 컴포넌트는 raw 메시지를 직접 만들지 않는다.
+- **확장 호스트(백엔드, 파란색)** — 아래. `LogParser`(파싱)·`ToolRegistry`(도구 스캔)와
+  두 웹뷰 호스트(`OsciloScopeWebviewPanel`·`SidebarProvider`)가 `API Table/BE` 밑에 붙는다.
+
+읽을 때 헷갈리기 쉬운 세 가지:
+
+- **`Tool`은 점선이다** — 신뢰할 수 없는 사용자 코드라 API Table에 직접 닿지 못한다. 데이터는
+  `ToolHost`가 `analyze(rawLogs)`/`render(mount)`의 **인자**로 떠먹여 준다(샌드박스, 아래 [도구는 웹뷰에서 돈다](#도구는-웹뷰에서-돈다)).
+- **`API Table/FE`는 웹뷰마다 별도 인스턴스다** — 사이드바와 메인 패널은 격리된 런타임이라
+  각자 하나씩 가진다. 그림에선 한 박스로 압축했다.
+- **`API Table/BE`는 런타임 허브가 아니라 프로토콜 정본**(`ApiTable.ts`)이다 — 호스트들이 그
+  `outbound/route`를 빌려 쓴다.
+
+> 그림에서 생략한 것: 검사 패널(`ValidationPanel`·`ToolValidator`)·도구 생성(`ToolTemplate`)·
+> `widgets`·글루(`util`·`constants`). 전체 목록은 아래 [모듈 구성](#모듈-구성) 참고.
+
+아래부터는 이 그림의 각 층을 하나씩 파고든다.
+
 ## 두 개의 실행 컨텍스트
 
 VS Code 확장은 서로 다른 두 프로세스로 나뉜다. OsciloScope도 이 경계를 그대로 따른다.
