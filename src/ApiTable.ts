@@ -127,23 +127,24 @@ export type EmptyPayload = Record<string, never>;
  * payload 인터페이스를 고치면 관련 송·수신부에 컴파일 에러가 떠서 고칠 곳을 놓치지 않는다.
  */
 export interface ProtocolMap {
-    [CommandTypes.UPDATE_ALL_DATA]:   UpdateAllDataPayload;
-    [CommandTypes.UI_READY]:          EmptyPayload;
-    [CommandTypes.SELECT_LOG_FILE]:   EmptyPayload;
-    [CommandTypes.LOG_FILE_LOADED]:   LogFileLoadedPayload;
-    [CommandTypes.START_RENDER]:      StartRenderPayload;
-    [CommandTypes.GET_TOOLS_LIST]:    EmptyPayload;
-    [CommandTypes.TOOLS_LIST]:        ToolsListPayload;
-    [CommandTypes.SELECT_TOOL]:       SelectToolPayload;
-    [CommandTypes.CREATE_TOOL]:       EmptyPayload;
-    [CommandTypes.COPY_TOOL]:         CopyToolPayload;
-    [CommandTypes.OPEN_TOOL]:         OpenToolPayload;
-    [CommandTypes.TOOL_CREATED]:      ToolCreatedPayload;
-    [CommandTypes.TOOLS_CHANGED]:     EmptyPayload;
-    [CommandTypes.VALIDATE_TOOL]:     ValidateToolPayload;
-    [CommandTypes.RUN_VALIDATION]:    RunValidationPayload;
-    [CommandTypes.VALIDATION_RESULT]: ValidationReport;
-    [CommandTypes.TOOL_ERROR]:        ToolErrorPayload;
+    // 방향(보내는 쪽 → 받는 쪽) · 무엇을
+    [CommandTypes.UPDATE_ALL_DATA]:   UpdateAllDataPayload;   // ext → 메인패널: 원본 로그 + 실행할 도구
+    [CommandTypes.UI_READY]:          EmptyPayload;           // 웹뷰 → ext: 프론트 준비 완료 신호
+    [CommandTypes.SELECT_LOG_FILE]:   EmptyPayload;           // 사이드바 → ext: 로그 파일 선택 요청
+    [CommandTypes.LOG_FILE_LOADED]:   LogFileLoadedPayload;   // ext → 사이드바/메인: 선택된 파일명·경로
+    [CommandTypes.START_RENDER]:      StartRenderPayload;     // 사이드바 → ext: 선택 도구로 렌더 시작 요청
+    [CommandTypes.GET_TOOLS_LIST]:    EmptyPayload;           // 사이드바 → ext: 도구 목록 요청
+    [CommandTypes.TOOLS_LIST]:        ToolsListPayload;       // ext → 사이드바: 도구 파일 목록 회신
+    [CommandTypes.SELECT_TOOL]:       SelectToolPayload;      // 사이드바 → ext: 선택한 도구 id 통지
+    [CommandTypes.CREATE_TOOL]:       EmptyPayload;           // 사이드바 → ext: 스켈레톤 도구 생성 요청
+    [CommandTypes.COPY_TOOL]:         CopyToolPayload;        // 사이드바 → ext: 번들 도구 복사 요청
+    [CommandTypes.OPEN_TOOL]:         OpenToolPayload;        // 사이드바 → ext: 도구 파일 열기 요청
+    [CommandTypes.TOOL_CREATED]:      ToolCreatedPayload;     // ext → 사이드바: 생성·복사된 도구 통지
+    [CommandTypes.TOOLS_CHANGED]:     EmptyPayload;           // ext → 사이드바: 도구 파일 변경 알림(목록 재요청 유도)
+    [CommandTypes.VALIDATE_TOOL]:     ValidateToolPayload;    // 사이드바 → ext: 유효성 검사 실행 요청
+    [CommandTypes.RUN_VALIDATION]:    RunValidationPayload;   // ext → 검사패널: 검사 실행 지시(도구 URI 포함)
+    [CommandTypes.VALIDATION_RESULT]: ValidationReport;       // 검사패널 → ext → 사이드바: 검사 리포트
+    [CommandTypes.TOOL_ERROR]:        ToolErrorPayload;       // 웹뷰 → ext: 도구 로드/실행 실패 통지
 }
 
 /** 봉투와 payload가 command로 묶인 판별 유니온(원하는 쪽에서 쓴다). */
