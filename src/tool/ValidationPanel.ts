@@ -92,7 +92,7 @@ export class ValidationPanel {
                     toolId,
                     toolUri: panel.webview.asWebviewUri(toolFileUri).toString()
                 }),
-                [CommandTypes.VALIDATION_RESULT]: payload => finish(payload as ValidationReport)
+                [CommandTypes.VALIDATION_RESULT]: payload => finish(payload)
             }));
 
             // 사용자가 검사 패널을 직접 닫는 경우도 결과 없이 끝난다.

@@ -7,13 +7,7 @@ import { ToolRegistry } from './tool/ToolRegistry';
 import { ToolTemplate } from './tool/ToolTemplate';
 import { ValidationPanel } from './tool/ValidationPanel';
 import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
-import {
-    CopyToolPayload,
-    OpenToolPayload,
-    SelectToolPayload,
-    StartRenderPayload,
-    ValidateToolPayload
-} from './tool/types';
+import { StartRenderPayload } from './tool/types';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
 
@@ -44,13 +38,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.onDidReceiveMessage((message: OsciloScopeMessage) => route(message, {
             [CommandTypes.SELECT_LOG_FILE]: () => this.selectLogFile(),
-            [CommandTypes.START_RENDER]:    payload => this.startRender(payload as StartRenderPayload),
+            [CommandTypes.START_RENDER]:    payload => this.startRender(payload),
             [CommandTypes.GET_TOOLS_LIST]:  () => this.sendToolsList(),
-            [CommandTypes.SELECT_TOOL]:     payload => { this.selectedToolId = (payload as SelectToolPayload).toolId; },
+            [CommandTypes.SELECT_TOOL]:     payload => { this.selectedToolId = payload.toolId; },
             [CommandTypes.CREATE_TOOL]:     () => this.createTool(),
-            [CommandTypes.COPY_TOOL]:       payload => this.copyTool((payload as CopyToolPayload).toolId),
-            [CommandTypes.OPEN_TOOL]:       payload => this.template.openTool((payload as OpenToolPayload).toolId),
-            [CommandTypes.VALIDATE_TOOL]:   payload => this.validateTool((payload as ValidateToolPayload).toolId)
+            [CommandTypes.COPY_TOOL]:       payload => this.copyTool(payload.toolId),
+            [CommandTypes.OPEN_TOOL]:       payload => this.template.openTool(payload.toolId),
+            [CommandTypes.VALIDATE_TOOL]:   payload => this.validateTool(payload.toolId)
         }));
     }
 

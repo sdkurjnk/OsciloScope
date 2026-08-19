@@ -72,6 +72,11 @@ interface OsciloScopeMessage {
 }
 ```
 
+`OsciloScopeMessage`는 전선 위의 느슨한 봉투다. 커맨드별 payload 타입은 `src/ApiTable.ts`의
+**`ProtocolMap`** 한 곳에 묶여 있고, `outbound`(발신)와 `route`(수신)가 이 맵을 따라 타입을
+맞춘다. 그래서 payload 인터페이스(`src/tool/types.ts`)를 고치면 관련 송·수신부에 **컴파일 에러**가
+떠서 고칠 곳을 놓치지 않고, 수신 핸들러는 payload 타입을 자동으로 받아 캐스팅이 필요 없다.
+
 ## 메인 패널 ↔ Extension Host
 
 | command | 방향 | payload | 처리 |
@@ -205,6 +210,16 @@ sequenceDiagram
 
 - **커맨드는 정본 한 곳만**: 새 커맨드/페이즈는 `OsciloScopeMessage.ts`에만 추가하고
   `npm run gen:constants`로 `constants.js`를 재생성한다 (수동 미러 금지).
+- **payload는 ProtocolMap에 연결**: 커맨드↔payload는 `ApiTable.ts`의 `ProtocolMap`에 묶는다.
+  타입이 맞물려 있어 계약이 바뀌면 컴파일러가 고칠 곳을 짚어 준다.
+
+### 새 커맨드 추가 절차
+
+1. `src/OsciloScopeMessage.ts`의 `CommandTypes`에 커맨드를 추가한다 (constants.js는 빌드가 생성).
+2. payload 인터페이스를 `src/tool/types.ts`에 정의한다.
+3. `src/ApiTable.ts`의 `ProtocolMap`에 `커맨드 → payload`를 연결한다.
+4. 발신이 필요하면 `outbound`에 엔드포인트 한 줄, 프론트는 `ApiTable.js`에 대응 엔드포인트를 추가한다.
+5. 수신 쪽 `route({ [커맨드]: 핸들러 })`에 핸들러를 건다 — payload 타입은 자동으로 따라온다.
 - **웹뷰별 URI**: 도구 URI를 넘길 때는 받을 웹뷰 기준으로 `asWebviewUri`를 호출해야 한다.
   한쪽 URL을 다른 쪽에 넘기면 로드에 실패한다.
 - **`UI_READY` 핸드셰이크**: 웹뷰가 리스너를 걸기 전에 보낸 메시지는 VS Code가 버퍼링하지
