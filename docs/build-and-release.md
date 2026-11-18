@@ -94,6 +94,10 @@ Extension Host 코드(`src/`)는 webpack으로 단일 `dist/extension.js`로 번
    생성하고(→ `publish.yml` → Open VSX) release/hotfix 브랜치를 삭제한다.
 5. **`pr-checklist.yml`** — `PR Gates` 메타데이터 체크(Verify PR Checklist / Version Label /
    Serialize Guard). `CI`와 함께 필수 체크로 요구된다.
+6. **`make-hotfix.yml`** — 수동 `workflow_dispatch`("Make Hotfix Branch"). master tip에서
+   `hotfix/vX.Y.(Z+1)` 브랜치를 자동 생성(도달 태그 PATCH+1, 1:1 직렬화 가드, opening 커밋
+   포함 — `cut-release.yml`과 대칭). 이후 finalize·배포는 release와 동일 흐름
+   (`finalize.yml`이 브랜치명에서 버전을 파싱하므로 `hotfix/*`도 그대로 처리).
 
 > 세부 규칙(룰셋 bypass, 직렬화, 재시도 조건)은 각 워크플로 파일 상단 주석과
 > 지식 베이스의 `GitFlowPipeline.md`를 정본으로 삼는다.
