@@ -10,7 +10,8 @@
  * 동작하며, acquireVsCodeApi는 웹뷰 진입점이 이미 회수했다 (설계문서 §3.3). 그림의
  * Tool ↔ FE-API Table 화살표는 "도구가 FE가 준 API(host)를 쓴다"는 뜻이지 메시지 통신이 아니다.
  *
- * 커맨드 문자열 정본은 src/OsciloScopeMessage.ts이고 constants.js가 그걸 미러한다.
+ * 커맨드 문자열 정본은 src/ApiTable.ts이고, constants.js는 그 enum에서 자동 생성된다
+ * (scripts/gen-constants.mjs, npm run compile에 포함). constants.js는 직접 편집하지 말 것.
  * 이 테이블은 그 위에 엔드포인트를 얹기만 한다.
  */
 

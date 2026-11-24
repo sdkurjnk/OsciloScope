@@ -107,7 +107,7 @@ interface RawLog {
 | --- | --- | --- |
 | `createOrShow` | `static (extensionUri: vscode.Uri): void` | 패널이 있으면 `reveal`, 없으면 생성. 핸드셰이크 상태(`isReady`/`pendingMessages`)를 초기화하고, `index.html`의 `css/`·`js/` 경로를 `asWebviewUri`로 치환. `localResourceRoots`는 `osciloscope/`로 제한. `onDidDispose`에서 패널·버퍼를 비운다. 끝에 `receiveDataFromWebview()`를 한 번 건다 |
 | `sendDataToWebview` | `static (message: OsciloScopeMessage): void` | 패널 없으면 에러 로그 후 무시. `UI_READY` 전이면 `pendingMessages`에 버퍼링, 준비됐으면 `postMessage` |
-| `receiveDataFromWebview` | `static (): void` | `onDidReceiveMessage` 등록. `UI_READY`에서 `isReady=true`로 바꾸고 버퍼를 flush. `VARIABLE_CHANGED`는 `console.log` |
+| `receiveDataFromWebview` | `static (): void` | `onDidReceiveMessage`를 `route`로 등록. `UI_READY`에서 `isReady=true`로 바꾸고 버퍼를 flush |
 
 메인 패널을 여는 즉시 `sendDataToWebview`를 부르면, 프론트가 `message` 리스너를 걸기 전이라 VS Code가
 메시지를 버린다. `isReady`/`pendingMessages` 버퍼가 이 유실을 막는다.
@@ -119,14 +119,32 @@ interface RawLog {
 
 ```ts
 enum CommandTypes {
-  UPDATE_ALL_DATA  = "UPDATE_ALL_DATA",   // ext → 메인 패널
-  VARIABLE_CHANGED = "VARIABLE_CHANGED",  // 메인 패널 → ext
-  UI_READY         = "UI_READY",          // 메인 패널 → ext
-  SELECT_LOG_FILE  = "SELECT_LOG_FILE",   // 사이드바 → ext
-  LOG_FILE_LOADED  = "LOG_FILE_LOADED",   // ext → 사이드바 / 메인 패널
-  START_RENDER     = "START_RENDER",      // 사이드바 → ext
-  GET_TOOLS_LIST   = "GET_TOOLS_LIST",    // 사이드바 → ext
-  TOOLS_LIST       = "TOOLS_LIST"         // ext → 사이드바
+  UPDATE_ALL_DATA   = "UPDATE_ALL_DATA",    // ext → 메인 패널
+  UI_READY          = "UI_READY",           // 웹뷰 → ext (메인 패널 · 검사 패널)
+  SELECT_LOG_FILE   = "SELECT_LOG_FILE",    // 사이드바 → ext
+  LOG_FILE_LOADED   = "LOG_FILE_LOADED",    // ext → 사이드바 / 메인 패널
+  START_RENDER      = "START_RENDER",       // 사이드바 → ext
+  GET_TOOLS_LIST    = "GET_TOOLS_LIST",     // 사이드바 → ext
+  TOOLS_LIST        = "TOOLS_LIST",         // ext → 사이드바
+
+  // --- 플러그인 구조 ---
+  SELECT_TOOL       = "SELECT_TOOL",        // 사이드바 → ext
+  CREATE_TOOL       = "CREATE_TOOL",        // 사이드바 → ext
+  COPY_TOOL         = "COPY_TOOL",          // 사이드바 → ext
+  OPEN_TOOL         = "OPEN_TOOL",          // 사이드바 → ext
+  TOOL_CREATED      = "TOOL_CREATED",       // ext → 사이드바
+  TOOLS_CHANGED     = "TOOLS_CHANGED",      // ext → 사이드바
+  VALIDATE_TOOL     = "VALIDATE_TOOL",      // 사이드바 → ext
+  RUN_VALIDATION    = "RUN_VALIDATION",     // ext → 검사 패널
+  VALIDATION_RESULT = "VALIDATION_RESULT",  // 검사 패널 → ext → 사이드바
+  TOOL_ERROR        = "TOOL_ERROR"          // 패널 → ext · ext ↔ 사이드바
+}
+
+// TOOL_ERROR payload의 phase — 도구 생명주기의 어느 단계에서 실패했는지
+enum ToolErrorPhase {
+  LOAD    = "load",
+  ANALYZE = "analyze",
+  RENDER  = "render"
 }
 
 interface OsciloScopeMessage {
@@ -134,5 +152,8 @@ interface OsciloScopeMessage {
   payload : Object;
 }
 ```
+
+`constants.js`로 미러되는 enum은 이 둘(`CommandTypes` · `ToolErrorPhase`)이다
+(`scripts/gen-constants.mjs`의 `MIRRORED_ENUMS`).
 
 커맨드별 방향·payload·시퀀스는 [message-protocol.md](./message-protocol.md)에 있다.
