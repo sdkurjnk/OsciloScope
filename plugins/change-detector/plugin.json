@@ -1,0 +1,8 @@
+{
+  "id": "change-detector",
+  "name": "변수 변화 감지",
+  "version": "1.0.0",
+  "description": "모든 변수의 값 변화를 스코프별로 묶어 타임라인으로 보여줍니다.",
+  "entry": "index.js",
+  "hostApi": "^1.0.0"
+}
