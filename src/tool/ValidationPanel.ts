@@ -25,13 +25,15 @@ export class ValidationPanel {
     ) {}
 
     public async run(toolId: string): Promise<ValidationReport> {
-        const tool = this.registry.find(toolId);
+        const tool = await this.registry.find(toolId);
         if (!tool) {
             return this.failure(toolId, '로드', `도구를 찾을 수 없습니다. (${toolId})`);
         }
-        if (tool.error) {
-            return this.failure(toolId, '로드', tool.error);
+        // plugin.json 오류·hostApi 비호환·진입 파일 없음은 웹뷰를 띄우기 전에 여기서 끝난다.
+        if (tool.error || !tool.fileUri) {
+            return this.failure(toolId, '로드', tool.error ?? '진입 파일이 없습니다.');
         }
+        const toolFileUri = tool.fileUri;
 
         const validatorPath = path.join(this.extensionUri.fsPath, ...VALIDATOR_MODULE);
         if (!fs.existsSync(validatorPath)) {
@@ -44,12 +46,12 @@ export class ValidationPanel {
             { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
             {
                 enableScripts: true,
-                localResourceRoots: webviewResourceRoots(this.extensionUri)
+                localResourceRoots: webviewResourceRoots(this.extensionUri, this.registry.globalStorageUri)
             }
         );
 
         try {
-            const report = await this.awaitReport(panel, toolId, tool.fileUri, validatorPath);
+            const report = await this.awaitReport(panel, toolId, toolFileUri, validatorPath);
             this.report(report);
             return report;
         } finally {

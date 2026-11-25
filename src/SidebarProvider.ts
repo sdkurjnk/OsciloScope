@@ -1,9 +1,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { outbound, route, OsciloScopeMessage, CommandTypes, StartRenderPayload } from './ApiTable';
+import {
+    outbound,
+    route,
+    OsciloScopeMessage,
+    CommandTypes,
+    StartRenderPayload,
+    ToolErrorPayload
+} from './ApiTable';
 import { ToolRegistry } from './tool/ToolRegistry';
-import { ToolTemplate } from './tool/ToolTemplate';
 import { ValidationPanel } from './tool/ValidationPanel';
 import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
 
@@ -19,9 +25,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     constructor(
         private readonly extensionUri: vscode.Uri,
         private readonly registry: ToolRegistry,
-        private readonly template: ToolTemplate,
         private readonly validation: ValidationPanel,
-        private readonly onLogFileSelected: (absolutePath: string, toolId?: string) => void
+        private readonly output: vscode.OutputChannel,
+        private readonly onLogFileSelected: (absolutePath: string, toolId?: string) => Promise<void>
     ) {}
 
     public resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -29,20 +35,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: webviewResourceRoots(this.extensionUri)
+            localResourceRoots: webviewResourceRoots(this.extensionUri, this.registry.globalStorageUri)
         };
 
         webviewView.webview.html = this.getHtml(webviewView.webview);
 
+        // 핸들러는 async라 실패가 처리되지 않은 Promise로 사라지지 않게 run()으로 감싼다.
         webviewView.webview.onDidReceiveMessage((message: OsciloScopeMessage) => route(message, {
-            [CommandTypes.SELECT_LOG_FILE]: () => this.selectLogFile(),
-            [CommandTypes.START_RENDER]:    payload => this.startRender(payload),
-            [CommandTypes.GET_TOOLS_LIST]:  () => this.sendToolsList(),
+            [CommandTypes.SELECT_LOG_FILE]: () => this.run('로그 파일 선택', () => this.selectLogFile()),
+            [CommandTypes.START_RENDER]:    payload => this.run('렌더링', () => this.startRender(payload)),
+            [CommandTypes.GET_TOOLS_LIST]:  () => this.run('도구 목록', () => this.sendToolsList()),
             [CommandTypes.SELECT_TOOL]:     payload => { this.selectedToolId = payload.toolId; },
-            [CommandTypes.CREATE_TOOL]:     () => this.createTool(),
-            [CommandTypes.COPY_TOOL]:       payload => this.copyTool(payload.toolId),
-            [CommandTypes.OPEN_TOOL]:       payload => this.template.openTool(payload.toolId),
-            [CommandTypes.VALIDATE_TOOL]:   payload => this.validateTool(payload.toolId)
+            [CommandTypes.OPEN_TOOL]:       payload => this.run('도구 열기', () => this.openTool(payload.toolId)),
+            [CommandTypes.VALIDATE_TOOL]:   payload => this.run('도구 검사', () => this.validateTool(payload.toolId))
         }));
     }
 
@@ -69,7 +74,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     // START 버튼: 선택된 로그 파일로 메인 패널 렌더링 (창을 닫았어도 다시 열림)
     // 도구 id를 START에도 실어 보내 사이드바와 확장의 선택 상태 불일치를 없앤다 (설계문서 §9.2).
-    private startRender(payload: StartRenderPayload): void {
+    private async startRender(payload: StartRenderPayload): Promise<void> {
         if (!this.selectedLogPath) {
             vscode.window.showWarningMessage('OsciloScope: 먼저 로그 파일을 선택하세요.');
             return;
@@ -77,33 +82,30 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         if (payload?.toolId) {
             this.selectedToolId = payload.toolId;
         }
-        this.onLogFileSelected(this.selectedLogPath, this.selectedToolId);
+        await this.onLogFileSelected(this.selectedLogPath, this.selectedToolId);
     }
 
-    // 확장은 파일 시스템 스캔만 한다. 도구의 name/version은 사이드바가 import해서 채운다.
-    private sendToolsList(): void {
-        if (!this.view) {
+    // 확장은 전역 저장소의 plugin.json만 읽는다. 도구 코드는 실행하지 않는다.
+    private async sendToolsList(): Promise<void> {
+        const view = this.view;
+        if (!view) {
             return;
         }
-        this.api.toolsList(this.registry.toPayload(this.view.webview));
+        this.api.toolsList(await this.registry.toPayload(view.webview));
     }
 
-    // 생성·복사 결과는 TOOL_CREATED로 알린다. 목록 갱신은 파일 감시가 알아서 처리하므로
-    // 여기서 따로 보내지 않는다 (사이드바는 TOOLS_CHANGED를 받고 다시 요청한다).
-    private async createTool(): Promise<void> {
-        const created = await this.template.createTool();
-        if (created) {
-            this.selectedToolId = created.toolId;
-            this.api.toolCreated(created);
+    // 진입 파일을 에디터로 연다. 문제가 있는 플러그인이라도 진입 파일이 있으면 열 수 있다 —
+    // 원인을 봐야 고칠 수 있기 때문이다.
+    private async openTool(toolId: string): Promise<void> {
+        const tool = await this.registry.find(toolId);
+        if (!tool || !tool.fileUri) {
+            vscode.window.showErrorMessage(
+                `OsciloScope: 도구 파일을 열 수 없습니다. (${toolId}${tool?.error ? `: ${tool.error}` : ''})`
+            );
+            return;
         }
-    }
-
-    private async copyTool(toolId: string): Promise<void> {
-        const created = await this.template.copyTool(toolId);
-        if (created) {
-            this.selectedToolId = created.toolId;
-            this.api.toolCreated(created);
-        }
+        const document = await vscode.workspace.openTextDocument(tool.fileUri);
+        await vscode.window.showTextDocument(document);
     }
 
     // 검사는 전용 임시 패널에서 돌고, 결과 리포트만 사이드바로 돌아온다.
@@ -112,9 +114,27 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         this.api.validationResult(report);
     }
 
-    // 파일 감시 알림. 사이드바가 받으면 GET_TOOLS_LIST로 목록을 다시 요청한다.
+    // 전역 저장소 변경 알림. 사이드바가 받으면 GET_TOOLS_LIST로 목록을 다시 요청한다.
     public notifyToolsChanged(): void {
         this.api.toolsChanged();
+    }
+
+    // 메인 패널에서 실행 중 실패한 도구를 사이드바에 알린다 (선택 해제·실패 표시는 사이드바 몫).
+    public notifyToolError(payload: ToolErrorPayload): void {
+        if (this.selectedToolId === payload.toolId) {
+            this.selectedToolId = undefined;
+        }
+        this.api.toolError(payload);
+    }
+
+    private async run(what: string, task: () => Promise<void>): Promise<void> {
+        try {
+            await task();
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            this.output.appendLine(`[SidebarProvider] ${what} 실패: ${message}`);
+            vscode.window.showErrorMessage(`OsciloScope: ${what}에 실패했습니다. (${message})`);
+        }
     }
 
     // osciloscope/sidebar-view/index.html을 읽어와서 css/js 상대경로를
