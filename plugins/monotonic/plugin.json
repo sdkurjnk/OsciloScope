@@ -1,0 +1,8 @@
+{
+  "id": "monotonic",
+  "name": "단조 증가 변수",
+  "version": "1.0.0",
+  "description": "값이 계속 증가하기만 한 숫자 변수를 골라내 값 추이를 그립니다.",
+  "entry": "index.js",
+  "hostApi": "^1.0.0"
+}

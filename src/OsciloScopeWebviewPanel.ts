@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { route, OsciloScopeMessage, CommandTypes } from './ApiTable';
+import { route, OsciloScopeMessage, CommandTypes, ToolErrorPayload } from './ApiTable';
 import { injectCspSource, webviewResourceRoots } from './WebviewSupport';
 
 export class OsciloScopeWebviewPanel {
@@ -13,7 +13,12 @@ export class OsciloScopeWebviewPanel {
     private static isReady: boolean = false;
     private static pendingMessages: OsciloScopeMessage[] = [];
 
-    public static createOrShow(extensionUri: vscode.Uri): void {
+    // 메인 패널이 보낸 TOOL_ERROR를 받을 곳 (extension.ts가 사이드바·출력 채널로 중계).
+    // 예전에는 이 패널의 route가 UI_READY만 처리해서 TOOL_ERROR가 확장에서 버려졌고,
+    // 사이드바는 실행 중 실패한 도구를 끝내 알지 못했다.
+    public static onToolError?: (payload: ToolErrorPayload) => void;
+
+    public static createOrShow(extensionUri: vscode.Uri, globalStorageUri: vscode.Uri): void {
     if (OsciloScopeWebviewPanel.panel) {
         OsciloScopeWebviewPanel.panel.reveal(vscode.ViewColumn.One);
         return;
@@ -29,7 +34,7 @@ export class OsciloScopeWebviewPanel {
         vscode.ViewColumn.One,
         {
             enableScripts: true,
-            localResourceRoots: webviewResourceRoots(extensionUri)
+            localResourceRoots: webviewResourceRoots(extensionUri, globalStorageUri)
         }
     );
 
@@ -84,6 +89,9 @@ export class OsciloScopeWebviewPanel {
                         m => OsciloScopeWebviewPanel.panel.webview.postMessage(m)
                     );
                     OsciloScopeWebviewPanel.pendingMessages = [];
+                },
+                [CommandTypes.TOOL_ERROR]: payload => {
+                    OsciloScopeWebviewPanel.onToolError?.(payload);
                 }
             })
         );
