@@ -1,14 +1,25 @@
-// @osciloscope-types 0.2.0 — 이 파일은 확장이 생성합니다. 직접 수정하지 마세요.
+// @osciloscope-types 1.0.0 — 이 파일은 확장이 생성합니다. 직접 수정하지 마세요.
 //
-// 분석 도구(<id>.tool.js)를 작성할 때 자동완성과 타입 검사를 제공합니다.
-// 도구 파일 첫 줄의 /// <reference path="./osciloscope-tool.d.ts" /> 로 연결됩니다.
+// 분석 도구 플러그인의 계약 (Tool API Table, Host API 1.0.0).
 //
+//   ToolHost → Tool : ToolHostApi  — Tool이 쓸 수 있는 것은 이 객체뿐입니다.
+//   Tool → ToolHost : Tool         — 진입 파일이 `export default`로 내보내는 객체입니다.
+//
+// 플러그인의 plugin.json `hostApi` 범위가 이 버전과 맞아야 로드됩니다.
+// - 함수·필드 추가: 부 버전 올림 (1.0 → 1.1). 기존 플러그인은 그대로 동작합니다.
+// - 기존 함수 변경·삭제: 주 버전 올림 (1.x → 2.0). 호환되지 않는 플러그인은 로드하지 않습니다.
+//
+// 진입 파일 첫 줄의 /// <reference path="./osciloscope-tool.d.ts" /> 로 연결합니다.
 // 여기 선언된 타입은 전역입니다. 이 파일에 import/export를 추가하면 모듈로 바뀌어
-// 도구 파일에서 타입이 보이지 않게 되므로 주의하세요.
+// 진입 파일에서 타입이 보이지 않게 되므로 주의하세요.
+
+// ─────────────────────────────────────────────────────────────
+// 데이터
+// ─────────────────────────────────────────────────────────────
 
 /**
- * oscilo가 로그 파일에 남긴 이벤트 한 줄.
- * analyze()가 받는 배열의 원소이며, 절대 수정하면 안 됩니다(입력 불변성은 검사 항목입니다).
+ * oscilo가 로그 파일에 남긴 이벤트 한 줄 (계획서의 LogData).
+ * getLogs()와 onLogUpdate 콜백이 주는 배열의 원소이며, 절대 수정하면 안 됩니다.
  */
 interface RawLog {
     /** 변수 이름 */
@@ -33,20 +44,15 @@ interface RawLog {
     var_id: number | null;
 }
 
-/** 사이드바 목록에 표시되는 도구 정보 */
-interface ToolMeta {
-    /** 고유 식별자. ^[a-z0-9][a-z0-9-]*$ 이며 파일명과 일치해야 합니다 */
-    id: string;
-    /** 사이드바 표시명. 한글을 써도 됩니다 */
-    name: string;
-    /** major.minor.patch */
-    version: string;
-    /** 도구 설명. 사이드바 툴팁에 쓰입니다 */
-    description?: string;
-}
+/** 현재 VS Code 테마 */
+type ToolTheme = 'light' | 'dark' | 'high-contrast';
+
+// ─────────────────────────────────────────────────────────────
+// 헬퍼 · 표준 위젯 (ToolHostApi를 통해 제공)
+// ─────────────────────────────────────────────────────────────
 
 /**
- * 변수 정체성 키잉·그룹핑 헬퍼.
+ * 변수 정체성 키잉·그룹핑·이스케이프 헬퍼.
  * 도구마다 다르게 구현하면 결과가 어긋나므로 이 함수들을 쓰는 것을 권합니다.
  */
 interface ToolHelpers {
@@ -58,19 +64,6 @@ interface ToolHelpers {
     varKeyOf(log: RawLog): string;
     /** RawLog → 'Global' | 'Local' */
     groupOf(log: RawLog): 'Global' | 'Local';
-}
-
-/** analyze()에 전달되는 실행 맥락. DOM으로 가는 통로는 없습니다 */
-interface ToolContext {
-    /** 분석 중인 로그 파일의 절대경로 (표시용 문자열) */
-    filePath: string;
-    /** 출력 채널에 기록합니다. 검사 중에는 캡처만 되고 표시되지 않습니다 */
-    log(msg: string): void;
-    helpers: ToolHelpers;
-}
-
-/** render()에서 쓰는 헬퍼. ToolHelpers에 문자열 이스케이프가 더해집니다 */
-interface ToolHostHelpers extends ToolHelpers {
     /** HTML 특수문자를 이스케이프합니다. innerHTML에 값을 넣어야 할 때 쓰세요 */
     escape(str: string): string;
 }
@@ -118,6 +111,7 @@ interface VarListOptions {
 
 /**
  * 기본 UI를 재사용하기 위한 표준 위젯.
+ * 위젯 스타일은 ToolHost가 컨테이너의 shadow root 안에 넣어 둡니다.
  *
  * 실험적(experimental) API입니다 — 마이너 버전에서 시그니처가 바뀔 수 있습니다.
  */
@@ -130,54 +124,98 @@ interface ToolWidgets {
         groups: Record<string, VarEntry[]>,
         opts?: VarListOptions
     ): VarListHandle;
-    /** 한 변수의 변경 이력을 그립니다 (증감 태그 포함) */
-    timeline(el: HTMLElement, entry: VarEntry): void;
+    /** 한 변수의 변경 이력을 그립니다 (증감 태그 포함). entry가 null이면 빈 화면 */
+    timeline(el: HTMLElement, entry: VarEntry | null): void;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Tool API Table
+// ─────────────────────────────────────────────────────────────
+
 /**
- * render()에 전달되는 화면 쪽 맥락.
+ * ToolHost → Tool. activate()의 인자로 전달됩니다.
  *
  * 여기 없는 것은 의도적으로 제공하지 않습니다 — 파일 접근, 네트워크,
- * 확장으로 메시지를 보내는 통로(acquireVsCodeApi)는 쓸 수 없습니다.
+ * 확장으로 메시지를 보내는 통로(acquireVsCodeApi), LogParser는 쓸 수 없습니다.
  */
-interface ToolHost {
-    /** 도구 전용 컨테이너. 이 안에만 DOM을 만드세요 */
-    mount: HTMLElement;
-    /** 로그 파일 절대경로 */
-    filePath: string;
+interface ToolHostApi {
+    /** Host API 버전 (semver). 이 파일 첫 줄의 버전과 같습니다 */
+    readonly apiVersion: string;
+
+    /** 현재 파싱된 로그. 반환된 배열과 원소는 수정하지 마세요 */
+    getLogs(): readonly RawLog[];
+
+    /**
+     * 로그 변경 구독. 반환값을 호출하면 구독이 해제됩니다.
+     *
+     * 현재는 같은 도구로 로그를 다시 읽었을 때(START 재실행) 호출됩니다.
+     * 실시간 갱신 경로가 생기면 그때도 같은 콜백이 호출됩니다.
+     * deactivate() 시점에 남은 구독은 ToolHost가 자동으로 해제합니다.
+     */
+    onLogUpdate(cb: (logs: readonly RawLog[]) => void): () => void;
+
+    /**
+     * 도구 전용 마운트 지점. ToolHost가 만든 shadow root(open) 안의 div입니다.
+     * 이 안에만 DOM을 만드세요.
+     *
+     * - 바깥 페이지 스타일은 들어오지 않고, 여기 넣은 <style>도 바깥으로 새지 않습니다.
+     * - document.getElementById로는 이 안의 노드를 찾을 수 없습니다.
+     *   container.querySelector(...)를 쓰세요.
+     * - VS Code 테마 변수(--vscode-*)는 그대로 쓸 수 있습니다.
+     */
+    getContainer(): HTMLElement;
+
+    /** 분석 중인 로그 파일의 절대경로 (표시용 문자열) */
+    getFilePath(): string;
+
     /** 현재 VS Code 테마 */
-    theme: 'light' | 'dark' | 'high-contrast';
-    /** 출력 채널에 기록합니다 */
-    log(msg: string): void;
-    helpers: ToolHostHelpers;
-    widgets: ToolWidgets;
+    getTheme(): ToolTheme;
+
+    /** 출력 채널에 기록합니다. 검사 중에는 캡처만 되고 표시되지 않습니다 */
+    log(message: string): void;
+
+    readonly helpers: ToolHelpers;
+    readonly widgets: ToolWidgets;
+}
+
+/** 도구 정보. plugin.json의 같은 이름 필드와 일치해야 합니다 */
+interface ToolMetadata {
+    /** 식별자. ^[a-z0-9][a-z0-9-]*$ 이며 plugin.json의 id와 같아야 합니다 */
+    id: string;
+    /** 표시 이름. 한글을 써도 됩니다 */
+    name: string;
+    /** major.minor.patch. plugin.json의 version과 같아야 합니다 */
+    version: string;
+    /** 도구 설명 */
+    description: string;
 }
 
 /**
- * 분석 도구. `export default`로 내보내세요.
+ * Tool → ToolHost. 진입 파일에서 `export default`로 내보내세요.
  *
  * 지켜야 할 규약:
- * - analyze/render는 **동기 함수**여야 합니다. Promise를 반환하면 검사에서 실패합니다.
- * - rawLogs를 변형하면 안 됩니다.
- * - analyze는 DOM에 접근하면 안 되고, 결정적이어야 합니다
- *   (Date.now()·Math.random()을 쓰면 결정성 검사에서 걸립니다).
- * - 모듈 최상위에서 부작용을 만들지 마세요. 목록을 만들 때 한 번 import됩니다.
+ * - activate/deactivate와 onLogUpdate 콜백은 **동기 함수**여야 합니다.
+ *   Promise를 반환하면 실패로 처리됩니다.
+ * - getLogs()가 준 로그를 변형하면 안 됩니다.
+ * - 화면은 결정적이어야 합니다. 같은 로그로 두 번 activate했을 때 같은 DOM이 나와야 합니다
+ *   (Date.now()·Math.random()으로 만든 id·좌표는 검사에서 걸립니다).
+ * - getContainer() 밖의 DOM을 건드리지 마세요.
+ * - 모듈 최상위에서 부작용을 만들지 마세요.
+ * - 도구 객체는 실행마다 재사용됩니다(activate → deactivate → activate).
+ *   이전 실행의 상태는 deactivate()에서 모두 비우세요.
  */
-interface OsciloScopeTool {
-    meta: ToolMeta;
+interface Tool {
+    readonly metadata: ToolMetadata;
 
     /**
-     * 1단계 — 계산. 반환값의 형식은 자유이며 시스템은 들여다보지 않습니다.
-     * @param rawLogs 수정하지 마세요
+     * 도구를 시작합니다. api.getLogs()로 로그를 읽고 api.getContainer()에 그리세요.
+     * 로그 갱신을 반영하려면 api.onLogUpdate()를 구독하세요.
      */
-    analyze(rawLogs: RawLog[], ctx: ToolContext): any;
+    activate(api: ToolHostApi): void;
 
     /**
-     * 2단계 — 표현. host.mount 안에만 DOM을 만드세요.
-     * @param model analyze()가 반환한 값
+     * 도구를 종료합니다. 직접 등록한 타이머·전역 리스너·observer를 여기서 해제하세요.
+     * 컨테이너 비우기와 onLogUpdate 구독 해제는 ToolHost가 합니다.
      */
-    render(model: any, host: ToolHost): void;
-
-    /** 선택 구현 — 타이머·전역 리스너를 썼다면 여기서 해제하세요 */
-    dispose?(): void;
+    deactivate(): void;
 }

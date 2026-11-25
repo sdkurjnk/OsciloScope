@@ -14,7 +14,7 @@ export const BUILTIN_TOOLS_DIR = 'tools';
 // 확장이 가진 버전과 파일 첫 줄이 다르면 덮어쓴다 (설계문서 §5.8).
 // 인터페이스가 바뀌었는데 옛 정의가 남아 실제와 어긋나는 것을 막기 위함.
 export const TOOL_TYPES_FILE    = 'osciloscope-tool.d.ts';
-export const TOOL_TYPES_VERSION = '0.2.0';
+export const TOOL_TYPES_VERSION = '1.0.0';   // = plugin.ts HOST_API_VERSION
 export const TOOL_TYPES_STAMP   = /^\/\/ @osciloscope-types\s+(\S+)/;
 
 // 도구를 고르지 않았을 때 실행되는 번들 도구.
